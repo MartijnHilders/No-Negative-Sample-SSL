@@ -13,3 +13,6 @@ model_weights/
 semi_sup_results/
 precomputed_similarities/
 shared_models
+*.mat
+*.xml
+*.iml

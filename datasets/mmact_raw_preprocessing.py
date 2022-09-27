@@ -47,6 +47,7 @@ ACTIVITY_DICT = {
     'carrying_light': 36
 }
 
+
 class MmactRaw():
     """
     Unzips MMAct data and then pre-processes it into the UTD-MHAD format in the given destination folder.
@@ -57,7 +58,7 @@ class MmactRaw():
         orientation_clip.tar.gz
         trimmed_pose.zip (from challenge data)
     """
-    
+
     def __init__(self, data_path, destination) -> None:
         self.data_path = data_path
         self.destination = destination
@@ -71,7 +72,7 @@ class MmactRaw():
     def process_inertial_data(self):
         inertial_sources = ["acc_phone_clip", "acc_watch_clip", "gyro_clip", "orientation_clip"]
         tmp_root = os.path.join(self.data_path, "inertial_tmp")
-        
+
         # Unpack inertial zip files.
         print("Unzipping inertial data archives...")
         for source in tqdm(inertial_sources):
@@ -82,8 +83,10 @@ class MmactRaw():
         all_source_paths = []
         for source in inertial_sources:
             source_root_path = os.path.join(tmp_root, f"{source}")
-            file_paths = sorted([os.path.join(dp, f) for dp, _, filenames in os.walk(source_root_path) for f in filenames if os.path.splitext(f)[1] == '.csv'])
-            file_paths = [f.replace("\\", "/") for f in file_paths] # Windows compatibility
+            file_paths = sorted(
+                [os.path.join(dp, f) for dp, _, filenames in os.walk(source_root_path) for f in filenames if
+                 os.path.splitext(f)[1] == '.csv'])
+            file_paths = [f.replace("\\", "/") for f in file_paths]  # Windows compatibility
             all_source_paths += file_paths
 
         # Create a temporary dataframe with paths and extracted metadata from inertial data.
@@ -93,8 +96,8 @@ class MmactRaw():
             source, subject, scene, session, video_name = source_path.split("/")[-5:]
             dest_subject = int(subject[7:])
             dest_action = ACTIVITY_DICT[video_name.split('.')[0].lower()]
-            dest_scene = int(scene[5:]) # might be needed for cross-scene split
-            dest_session = int(session[7:]) # might be needed for cross-session split
+            dest_scene = int(scene[5:])  # might be needed for cross-scene split
+            dest_session = int(session[7:])  # might be needed for cross-session split
             temp_df.loc[i] = [dest_subject, dest_action, dest_scene, dest_session, source, source_path]
 
         inertial_destination = os.path.join(self.destination, "Inertial")
@@ -118,7 +121,8 @@ class MmactRaw():
 
                 # Discard if not all sensor sources are present.
                 if len(trial_files.index) != len(inertial_sources):
-                    print(f'Skipping subject {subject}, action {action}, scene {scene}, session {session}, not all sensor sources present.')
+                    print(
+                        f'Skipping subject {subject}, action {action}, scene {scene}, session {session}, not all sensor sources present.')
                     trial = trial - 1
                     continue
 
@@ -126,11 +130,13 @@ class MmactRaw():
                 trial_data = {}
                 for source in inertial_sources:
                     r = trial_files[trial_files["source"] == source].iloc[0]
-                    trial_data[source] = pd.read_csv(r["source_path"], names=["ts", "x", "y", "z"])[["x", "y", "z"]].to_numpy()
+                    trial_data[source] = pd.read_csv(r["source_path"], names=["ts", "x", "y", "z"])[
+                        ["x", "y", "z"]].to_numpy()
 
                 # Discard if any of the sensor files is empty.
                 if any(len(trial_data[k]) == 0 for k in trial_data):
-                    print(f'Skipping subject {subject}, action {action}, scene {scene}, session {session}, empty time series found.')
+                    print(
+                        f'Skipping subject {subject}, action {action}, scene {scene}, session {session}, empty time series found.')
                     trial = trial - 1
                     continue
 
@@ -144,7 +150,7 @@ class MmactRaw():
                 shortest_length = min([d.shape[0] for d in trial_data.values()])
                 for source in inertial_sources:
                     trial_data[source] = trial_data[source][:shortest_length]
-                
+
                 # Concatenate the values and write to a new file.
                 final_sample = np.concatenate(list(trial_data.values()), axis=1)
                 dest_filename = f'a{action}_s{subject}_t{trial}_ses{session}_sc{scene}.csv'
@@ -153,7 +159,6 @@ class MmactRaw():
 
         # Cleanup extracted data.
         rmtree(tmp_root)
-
 
     def process_pose_data(self):
         """
@@ -169,9 +174,10 @@ class MmactRaw():
 
         # List all pose data paths.
         data_path = os.path.join(tmp_destination, "pose", "cross_view", "trainval")
-        file_paths = sorted([os.path.join(dp, f) for dp, _, filenames in os.walk(data_path) for f in filenames if os.path.splitext(f)[1] == '.json'])
-        file_paths = [f.replace("\\", "/") for f in file_paths] # Windows compatibility
-        file_paths = list(filter(lambda f: "cam1" in f, file_paths)) # Filter view.
+        file_paths = sorted([os.path.join(dp, f) for dp, _, filenames in os.walk(data_path) for f in filenames if
+                             os.path.splitext(f)[1] == '.json'])
+        file_paths = [f.replace("\\", "/") for f in file_paths]  # Windows compatibility
+        file_paths = list(filter(lambda f: "cam1" in f, file_paths))  # Filter view.
 
         # Create a temporary dataframe with paths and extracted metadata from pose data.
         print("Creating temporary dataframe...")
@@ -180,8 +186,8 @@ class MmactRaw():
             subject, _, scene, session, video_name = source_path.split("/")[-5:]
             dest_subject = int(subject[7:])
             dest_action = ACTIVITY_DICT[video_name.split('.')[0].lower()]
-            dest_scene = int(scene[5:]) # might be needed for cross-scene split
-            dest_session = int(session[7:]) # might be needed for cross-session split
+            dest_scene = int(scene[5:])  # might be needed for cross-scene split
+            dest_session = int(session[7:])  # might be needed for cross-session split
             temp_df.loc[i] = [dest_subject, dest_action, dest_scene, dest_session, source_path]
 
         # Sort the dataframe and add a trial counter.
@@ -190,17 +196,17 @@ class MmactRaw():
 
         pose_destination = os.path.join(self.destination, "Skeleton")
         os.makedirs(pose_destination, exist_ok=True)
-        
+
         # Process each data file.
         print("Processing and saving pose files...")
-        N_JOINTS = 17 # COCO keypoints
-        N_CHANNELS = 2 # 2D keypoints
+        N_JOINTS = 17  # COCO keypoints
+        N_CHANNELS = 2  # 2D keypoints
         n_rows = temp_df.shape[0]
         for i, row in tqdm(temp_df.iterrows(), total=n_rows):
             # Read the original data file.
             with open(row["source_path"], 'r') as f:
                 raw_data = json.load(f)
-            
+
             # Read and reshape the data, discarding confidence values and keeping only the second subject if there are two subjects.
             n_frames = len(raw_data.keys())
             np_data = np.zeros((N_JOINTS, N_CHANNELS, n_frames))
@@ -217,7 +223,7 @@ class MmactRaw():
             # If a sample is completely empty, skip it.
             if (np.sum(np_data)) == 0:
                 continue
-            
+
             # Save the data as a Numpy file.
             dest_filename = f'a{row["action"]}_s{row["subject"]}_t{row["trial"]}_ses{row["session"]}_sc{row["scene"]}'
             dest_path = os.path.join(pose_destination, dest_filename)
@@ -226,11 +232,13 @@ class MmactRaw():
         # Cleanup extracted data.
         rmtree(tmp_destination)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, help='initial data path', required=True)
     parser.add_argument('--destination_path', type=str, help='destination path', required=True)
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     args = parse_arguments()

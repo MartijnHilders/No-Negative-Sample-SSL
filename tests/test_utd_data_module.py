@@ -13,6 +13,7 @@ class TestUTDDataset(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+
         cls.path = DATA_PATH
         cls.all_subjects = {"subject": list(range(1,9))}
         cls.all_modalities = UTDDataset._supported_modalities()
