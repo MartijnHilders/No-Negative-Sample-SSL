@@ -90,6 +90,7 @@ if __name__ == '__main__':
     instance_path_depth = f'{DATA_PATH}/Depth/x1_a1_t1.mat'
     depth_instance = CZUDepthInstance(instance_path_depth)
     print(depth_instance.image[0])
+    print(depth_instance.parse_modality())
 
     instance_path_inertial = f'{DATA_PATH}/Inertial/x1_a1_t1.mat'
     inertial_instance = CZUInertialInstance(instance_path_inertial)
