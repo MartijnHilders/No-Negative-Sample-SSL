@@ -24,7 +24,7 @@ class CZUraw():
 
 
     def process_data(self, type):
-        if type ==  'Depth':
+        if type == 'Depth':
             dir_path = os.path.join(self.data_path, 'depth_mat')
         if type == 'Inertial':
             dir_path = os.path.join(self.data_path, 'sensor_mat')

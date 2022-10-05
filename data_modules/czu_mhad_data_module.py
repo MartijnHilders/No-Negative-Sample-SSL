@@ -9,9 +9,9 @@ from transforms.inertial_transforms import InertialSampler
 from transforms.inertial_augmentations import Jittering
 from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
+from transforms.depth_transforms import DepthSampler
 from utils.experiment_utils import load_yaml_to_dict
 
-#TODO WE NEED TO CONTINUE ADAPTING THE DATA MODULE
 
 CZU_DEFAULT_SPLIT = {
     "train": {"subject": [1, 2]},
@@ -39,7 +39,7 @@ class CZUDataModule(MMHarDataModule):
 
     def __init__(self,
                  path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad'),
-                 modalities: List[str] = ["depth", "skeleton", "inertial"], # changed from ["intertial", "skeleton"]
+                 modalities: List[str] = ["skeleton", "inertial", "depth"],
                  batch_size: int = 32,
                  split=CZU_DEFAULT_SPLIT,
                  train_transforms={},
@@ -69,20 +69,22 @@ class CZUDataModule(MMHarDataModule):
 if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
-        "skeleton": SkeletonSampler(100)
+        "skeleton": SkeletonSampler(100),
+        "depth": DepthSampler(100)
     }
+
+    # TODO: Note that the utd_mhad database uses 1 inertial sensor and czu_mhad uses 10. therefore the matrices differ
+    # todo check if we need to fix this since every 7th reading there is one new sensor
 
     data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms)
     data_module.setup()
 
     dl = data_module.train_dataloader()
 
-    # todo mistake here with the data shape, make sure that all of the data is in the correct format
-    # todo ask bulat for couple of files from utdMHAD, especially skeleton see problem skeleton_transforms.py
-
     for b in dl:
         print(b.keys())
         print(b['label'].shape)
         print(b['inertial'].shape)
         print(b['skeleton'].shape)
+        print(b['depth'].shape)
         break

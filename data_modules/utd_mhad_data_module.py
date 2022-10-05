@@ -1,6 +1,7 @@
 from typing import List
 from numpy import int16
 from torchvision import transforms
+import os
 
 import datasets.utd_mhad as utd_mhad
 from data_modules.mmhar_data_module import MMHarDataset, MMHarDataModule
@@ -31,7 +32,8 @@ class UTDDataset(MMHarDataset):
 class UTDDataModule(MMHarDataModule):
 
     def __init__(self, 
-            path: str = "/home/data/multimodal_har_datasets/utd_mhad",
+            # path: str = "/home/data/multimodal_har_datasets/utd_mhad",
+            path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets/utd_mhad'),
             modalities: List[str] = ["inertial", "skeleton"],
             batch_size: int = 32,
             split = UTD_DEFAULT_SPLIT,

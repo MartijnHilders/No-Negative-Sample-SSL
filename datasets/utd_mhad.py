@@ -71,7 +71,19 @@ class UTDSkeletonInstance(UTDInstance):
 
 
 if __name__ == '__main__':
-    DATA_PATH = '/home/data/multimodal_har_datasets/utd_mhad/'
-    instance_path = f'{DATA_PATH}/Skeleton/a1_s1_t1_skeleton.mat'
-    skeleton_instance = UTDSkeletonInstance(instance_path)
-    print(skeleton_instance.joints[0])
+    # DATA_PATH = '/home/data/multimodal_har_datasets/utd_mhad/'
+    # instance_path = f'{DATA_PATH}/Skeleton/a1_s1_t1_skeleton.mat'
+
+    # skeleton_instance = UTDSkeletonInstance(instance_path)
+    # print(skeleton_instance.joints[0])
+
+    DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(os.curdir)), 'multimodal_har_datasets/utd_mhad')
+    instance_path_skeleton = f'{DATA_PATH}/Skeleton/a1_s1_t1_skeleton.mat'
+    skeleton_instance = UTDSkeletonInstance(instance_path_skeleton)
+    # print(skeleton_instance.joints[0])
+    print(f' Skeleton shape {np.array(skeleton_instance.joints).shape}')
+
+    instance_path_inertial = f'{DATA_PATH}/Inertial/a1_s1_t1_inertial.mat'
+    inertial_instance = UTDInertialInstance(instance_path_inertial)
+    # print(inertial_instance.signal[0])
+    print(f' Inertial shape {np.array(inertial_instance.signal).shape}')

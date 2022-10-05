@@ -57,7 +57,7 @@ class SkeletonSampler:
         :param x: ndarray
         :return: ndarray
         """
-        print(x) # todo ndarray has to be 3d?
+
         return signal.resample(x, self.size, axis=2)
 
 

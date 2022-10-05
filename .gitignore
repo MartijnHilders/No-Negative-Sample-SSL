@@ -16,3 +16,6 @@ shared_models
 *.mat
 *.xml
 *.iml
+*.jpg
+*.avi
+*.csv
