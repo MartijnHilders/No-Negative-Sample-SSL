@@ -7,7 +7,7 @@ from transforms.general_transforms import Permute, ToFloat, ToTensor
 # import skvideo
 # skvideo.setFFmpegPath('C:/Users/Razvan/Desktop/ffmpeg-2021-10-03-git-2761a7403b-essentials_build/ffmpeg-2021-10-03-git-2761a7403b-essentials_build/bin')
 
-from configs.skeleton_properties import SKELETON_PROPERTIES
+# from configs.skeleton_properties import SKELETON_PROPERTIES
 from data_modules.constants import DATASET_PROPERTIES
 from transforms.skeleton_transforms import *
 

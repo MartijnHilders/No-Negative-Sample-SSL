@@ -4,7 +4,14 @@ import cv2
 import time
 import os
 
+import skvideo
+ffmpeg_path = "C:/Program Files/ffmpeg/bin"
+skvideo.setFFmpegPath(ffmpeg_path)
+import skvideo.datasets
+import skvideo.io
+
 from data_modules.constants import DATASET_PROPERTIES
+
 
 def frames_player(frames, snapshot_step=None):
     SNAPSHOTS_FOLDER = "snapshots"
@@ -22,20 +29,26 @@ def frames_player(frames, snapshot_step=None):
         cv2.waitKey(25)
         time.sleep(1/15)
 
+
+
+
 if __name__ == '__main__':
 
-    SUPPORTED_MODALITIES = ["rgb", "depth"]
+    SUPPORTED_MODALITIES = ["depth"]
 
     # Parse and validate input arguments.
     available_datasets = DATASET_PROPERTIES.keys()
     available_datasets = list(filter(lambda d: set(SUPPORTED_MODALITIES)
         .intersection(DATASET_PROPERTIES[d].dataset_class._supported_modalities()), available_datasets))
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', choices=available_datasets, required=True)
-    parser.add_argument('--modality', choices=SUPPORTED_MODALITIES, default="rgb", required=True)
+    parser.add_argument('--dataset', choices=available_datasets, required=False)
+    parser.add_argument('--modality', choices=SUPPORTED_MODALITIES, default="depth", required=False)
     parser.add_argument('--dataset_idx', type=int, default=0, help='idx to show from train dataset')
     parser.add_argument('--snapshot_step', type=int, default=None, help='if set, will save snapshots once every <snapshot_step> frames')
+    # parser.add_argument('--saveVideo', type=bool, required=False)
+    parser.set_defaults(dataset="czu_mhad")
     args = parser.parse_args()
+
     dataset = args.dataset
     modality = args.modality
     dataset_idx = args.dataset_idx
@@ -51,4 +64,11 @@ if __name__ == '__main__':
     instance_path = filtered_df.iloc[args.dataset_idx]["path"].replace("\\","/")
     print("Instance details:\n", filtered_df.iloc[args.dataset_idx])
     instance_frames = DATASET_PROPERTIES[dataset].dataset_class._get_data_for_instance(modality, instance_path)
-    frames_player(instance_frames[:50], snapshot_step=snapshot_step)
+
+
+
+    frames_player(instance_frames, snapshot_step=snapshot_step)
+
+
+
+

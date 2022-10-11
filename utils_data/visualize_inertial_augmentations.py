@@ -2,7 +2,7 @@ import argparse
 import json
 
 from transforms.augmentation_utils import compose_random_augmentations
-from visualizers.plotter import plot_inertial_subplots
+from plotter import plot_inertial_subplots
 from data_modules.utd_mhad_data_module import UTDDataModule
 
 def main(args):

@@ -1,10 +1,15 @@
 import argparse
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+from mpl_toolkits import mplot3d
 import matplotlib.animation as animation
 import numpy as np
 import torchvision.transforms
 
-from configs.skeleton_properties import SKELETON_PROPERTIES
+# from configs.skeleton_properties import SKELETON_PROPERTIES
 from data_modules.constants import DATASET_PROPERTIES
 from transforms.skeleton_transforms import *
 from transforms.general_transforms import ToTensor, Permute, ToFloat
@@ -12,11 +17,9 @@ from transforms.general_transforms import ToTensor, Permute, ToFloat
 def main(args):
     transforms = {
         "skeleton": torchvision.transforms.Compose([
-            SkeletonSampler(50),
-            RecenterJoints(SKELETON_PROPERTIES[args.dataset]["center_joint"]),
-            NormalizeDistances(*SKELETON_PROPERTIES[args.dataset]["normalization_joints"]),
+            # SkeletonSampler(50),
             ToTensor(),
-            Permute([1,2,0]),
+            # Permute([1,2,0]),
             ToFloat(),
             # RandomRotation(3, 30, 35, 1, SKELETON_PROPERTIES[args.dataset]["center_joint"]),
             # RandomScale(3, 2, 2, SKELETON_PROPERTIES[args.dataset]["center_joint"]),
@@ -32,7 +35,7 @@ def main(args):
     print("Instance details:\n", dataset.data_tables["skeleton"].iloc[args.dataset_idx])
 
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.view_init(21, -51)
 
     # Create cubic bounding box to simulate equal aspect ratio
@@ -55,6 +58,8 @@ def main(args):
     z_lim_min = mid_z - max_range
     z_lim_max = mid_z + max_range
 
+
+
     def draw_joints(frame):
         # Reset axes
         ax.clear()
@@ -70,16 +75,16 @@ def main(args):
         # Print joints as points
         ax.scatter(sample[0, frame, :], sample[2, frame, :], sample[1, frame, :])
 
-        # Print lines connecting the joints
-        for bone in SKELETON_PROPERTIES[args.dataset]["bones"]:
-            ax.plot(
-                [sample[0, frame, bone[0]], sample[0, frame, bone[1]]],
-                [sample[2, frame, bone[0]], sample[2, frame, bone[1]]],
-                [sample[1, frame, bone[0]], sample[1, frame, bone[1]]],
-            )
+        # # Print lines connecting the joints
+        # for bone in SKELETON_PROPERTIES[args.dataset]["bones"]:
+        #     ax.plot(
+        #         [sample[0, frame, bone[0]], sample[0, frame, bone[1]]],
+        #         [sample[2, frame, bone[0]], sample[2, frame, bone[1]]],
+        #         [sample[1, frame, bone[0]], sample[1, frame, bone[1]]],
+        #     )
 
     if args.continuous or args.frame is None:
-        anim = animation.FuncAnimation(fig, func=draw_joints, frames=sample.shape[1], interval=100)
+        anim = animation.FuncAnimation(fig, func=draw_joints, frames=sample.shape[1], interval=200)
     else:
         draw_joints(args.frame)
 
@@ -96,12 +101,12 @@ if __name__ == '__main__':
     available_datasets = list(filter(lambda d: "skeleton" in DATASET_PROPERTIES[d].dataset_class._supported_modalities(), available_datasets))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', choices=available_datasets, required=True)
+    parser.add_argument('--dataset', choices=available_datasets, required=False)
     parser.add_argument('--frame', type=int, default=None, help='Frame to plot')
     parser.add_argument('--dataset_idx', type=int, default=0, help='idx to plot from train dataset')
     parser.add_argument('--save', action='store_true')
     parser.add_argument('--continuous', action='store_true')
     parser.add_argument('--no_show', dest='show', action='store_false')
-    parser.set_defaults(save=False, continuous=False, normalize=False, show=True)
+    parser.set_defaults(dataset = "czu_mhad", save=False, continuous=False, normalize=False, show=True)
     args = parser.parse_args()
     main(args)

@@ -69,6 +69,15 @@ class UTDSkeletonInstance(UTDInstance):
         skeletons = scipy.io.loadmat(self._file)
         return skeletons['d_skel']
 
+class UTDDepthInstance(UTDInstance):
+    def __init__(self, file_):
+        super(UTDDepthInstance, self).__init__(file_)
+        self.image = self.read_depth()
+
+    def read_depth(self):
+        depth = scipy.io.loadmat(self._file)
+        return depth['d_depth']
+
 
 if __name__ == '__main__':
     # DATA_PATH = '/home/data/multimodal_har_datasets/utd_mhad/'
@@ -87,3 +96,7 @@ if __name__ == '__main__':
     inertial_instance = UTDInertialInstance(instance_path_inertial)
     # print(inertial_instance.signal[0])
     print(f' Inertial shape {np.array(inertial_instance.signal).shape}')
+
+    instance_path_depth = f'{DATA_PATH}/Depth/a1_s1_t1_depth.mat'
+    depth_instance = UTDDepthInstance(instance_path_depth)
+    print(f' Depth shape {np.array(depth_instance.image).shape}')

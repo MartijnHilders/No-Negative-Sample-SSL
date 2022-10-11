@@ -20,7 +20,7 @@ UTD_DEFAULT_SPLIT = {
 class UTDDataset(MMHarDataset):
     @staticmethod
     def _supported_modalities() -> List[str]:
-        return ["inertial", "skeleton"]
+        return ["inertial", "skeleton", "depth"]
     
     @staticmethod
     def _get_data_for_instance(modality, path):
@@ -28,6 +28,8 @@ class UTDDataset(MMHarDataset):
             return utd_mhad.UTDInertialInstance(path).signal
         elif modality == "skeleton":
             return utd_mhad.UTDSkeletonInstance(path).joints
+        elif modality == "depth":
+            return utd_mhad.UTDDepthInstance(path).image
 
 class UTDDataModule(MMHarDataModule):
 

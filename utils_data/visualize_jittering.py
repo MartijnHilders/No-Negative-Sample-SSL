@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 
 from transforms.inertial_augmentations import Jittering
-from visualizers.plotter import plot_inertial, plot_inertial_gyroscope_multiple
+from plotter import plot_inertial, plot_inertial_gyroscope_multiple
 from data_modules.utd_mhad_data_module import UTDDataModule
 
 def main(args):
