@@ -43,21 +43,21 @@ class DepthSampler:
         return d_frames
 
 # Todo create a cropper for this and inertial. maybe put them together
-class DepthCropper:
-    def __init__(self, size):
-        """
-        Initiate sampler with the size to resample to
-        :param size: int
-        """
-        self.size = size
-
-    def __call__(self, x):
-        print(x.shape)
-
-        if x.shape[0] < self.size:
-            raise ValueError(
-                f'Sampler size must be smaller than the original size of the array; Original: {x.shape[0]},'
-                f' Sampler: {self.size}, {x.shape}')
-        return self.down_sample(x)
-
-
+# class DepthCropper:
+#     def __init__(self, size):
+#         """
+#         Initiate sampler with the size to resample to
+#         :param size: int
+#         """
+#         self.size = size
+#
+#     def __call__(self, x):
+#         print(x.shape)
+#
+#         if x.shape[0] < self.size:
+#             raise ValueError(
+#                 f'Sampler size must be smaller than the original size of the array; Original: {x.shape[0]},'
+#                 f' Sampler: {self.size}, {x.shape}')
+#         return self.down_sample(x)
+#
+#

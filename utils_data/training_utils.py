@@ -45,7 +45,7 @@ def init_transforms(modality, transforms_cfg, ssl_random_augmentations=False, ra
   
 def init_datamodule(dataset_name, modalities, batch_size,
                     split, train_transforms, test_transforms,
-                    ssl = False, n_views = 2, num_workers = 64, limited_k=None):
+                    ssl = False, n_views = 2, num_workers = 6, limited_k=None):
     dataset_properties = DATASET_PROPERTIES[dataset_name]
     data_module = dataset_properties.datamodule_class(modalities = modalities, batch_size = batch_size, 
         split=split, train_transforms = train_transforms, test_transforms = test_transforms,

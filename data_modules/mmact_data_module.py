@@ -7,6 +7,8 @@ from transforms.inertial_transforms import InertialSampler
 from transforms.inertial_augmentations import Jittering
 from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
+import multiprocessing as mp
+from time import time
 
 MMACT_DEFAULT_SPLIT = {
     "train": {"subject": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]},
@@ -36,7 +38,7 @@ class MMActDataModule(MMHarDataModule):
             test_transforms = {},
 			ssl = False,
 			n_views = 2,
-            num_workers = 64,
+            num_workers = 6,
 			limited_k = None):
         super().__init__(path, modalities, batch_size, split, train_transforms, test_transforms, ssl, n_views, num_workers, limited_k)
 
@@ -52,12 +54,36 @@ class MMActDataModule(MMHarDataModule):
     def _create_test_dataset(self) -> MMHarDataset:
         return MMActDataset(self.modalities, self.dataset_manager, self.split["test"], transforms=self.test_transforms)
 
+
+def try_num_workers():
+    train_transforms = {
+        "inertial": transforms.Compose([InertialSampler(150)]),
+        "skeleton": SkeletonSampler(150)
+    }
+
+    for num_workers in range(2, mp.cpu_count(), 2):
+        data_module = MMActDataModule(batch_size=64, train_transforms=train_transforms, num_workers=num_workers)
+        data_module.setup()
+        dl = data_module.train_dataloader()
+
+        start = time()
+        epoch = 0
+        for b in dl:
+            epoch += 1
+            if epoch > 5:
+                break
+        end = time()
+        print("Finish with:{} second, num_workers={}".format(end - start, num_workers))
+
 if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(150)
     }
-    data_module = MMActDataModule(batch_size=8, train_transforms=train_transforms)
+
+    # try_num_workers()
+
+    data_module = MMActDataModule(batch_size=8, train_transforms=train_transforms, num_workers=64)
     data_module.setup()
 
     dl = data_module.train_dataloader()
@@ -67,3 +93,4 @@ if __name__ == '__main__':
         print(b['inertial'].shape)
         print(b['skeleton'].shape)
         break
+

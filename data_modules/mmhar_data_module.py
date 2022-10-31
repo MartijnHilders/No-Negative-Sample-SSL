@@ -180,7 +180,7 @@ class MMHarDataModule(LightningDataModule, metaclass=ABCMeta):
             test_transforms = {},
             ssl = False,
             n_views = 2,
-            num_workers = 64,
+            num_workers = 6,
             limited_k=None):
         super().__init__()
         self.path = path
