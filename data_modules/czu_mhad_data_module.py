@@ -4,6 +4,7 @@ import os
 from torchvision import transforms
 
 import datasets.czu_mhad as czu_mhad
+from data_modules import constants
 from data_modules.mmhar_data_module import MMHarDataset, MMHarDataModule
 from transforms.inertial_transforms import InertialSampler
 from transforms.inertial_augmentations import Jittering
@@ -38,7 +39,8 @@ class CZUDataset(MMHarDataset):
 class CZUDataModule(MMHarDataModule):
 
     def __init__(self,
-                 path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad'),
+                 # path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad')
+                 path: str = '/tmp/pycharm_project_848/multimodal_har_datasets/czu_mhad',
                  modalities: List[str] = ["skeleton", "inertial", "depth"],
                  batch_size: int = 32,
                  split=CZU_DEFAULT_SPLIT,
@@ -46,7 +48,7 @@ class CZUDataModule(MMHarDataModule):
                  test_transforms={},
                  ssl=False,
                  n_views=2,
-                 num_workers=1,
+                 num_workers=64,
                  limited_k=None):
         super().__init__(path, modalities, batch_size, split, train_transforms, test_transforms, ssl, n_views,
                          num_workers, limited_k)
@@ -65,21 +67,22 @@ class CZUDataModule(MMHarDataModule):
     def _create_test_dataset(self) -> MMHarDataset:
         return CZUDataset(self.modalities, self.dataset_manager, self.split["test"], transforms=self.test_transforms)
 
-
 if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(100),
-        "depth": DepthSampler(100)
+        "depth": DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)
     }
 
     # TODO: Note that the utd_mhad database uses 1 inertial sensor and czu_mhad uses 10. therefore the matrices differ
     # todo check if we need to fix this since every 7th reading there is one new sensor
 
-    data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms)
+    data_module = CZUDataModule(batch_size=64, train_transforms=train_transforms)
     data_module.setup()
 
+
     dl = data_module.train_dataloader()
+    print(len(dl))
 
     for b in dl:
         print(b.keys())
@@ -87,4 +90,4 @@ if __name__ == '__main__':
         print(b['inertial'].shape)
         print(b['skeleton'].shape)
         print(b['depth'].shape)
-        break
+

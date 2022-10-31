@@ -1,4 +1,5 @@
 import importlib
+import importlib
 import itertools
 import os
 import shutil
@@ -43,7 +44,7 @@ def init_transforms(modality, transforms_cfg, ssl_random_augmentations=False, ra
   
 def init_datamodule(data_path, dataset_name, modalities, batch_size,
                     split, train_transforms, test_transforms,
-                    ssl = False, n_views = 2, num_workers = 1, limited_k=None):
+                    ssl = False, n_views = 2, num_workers = 64, limited_k=None):
     dataset_properties = DATASET_PROPERTIES[dataset_name]
     print(dataset_properties)
     data_module = dataset_properties.datamodule_class(path = data_path, modalities = modalities, batch_size = batch_size, 
@@ -90,12 +91,12 @@ def setup_tb_logger(dir, name):
     return loggers.TensorBoardLogger(dir, name=name)
 
 
-def setup_wandb_logger(experiment_info, modality, dataset, experiment_id, entity='self-supervised-mmhar', approach='supervised'):
+def setup_wandb_logger(experiment_info, modality, dataset, experiment_id, entity='ssl-no-negatives', approach='supervised'):
     return loggers.WandbLogger(config=experiment_info, entity=entity, project=f"{approach}-{modality}-{dataset}", name=experiment_id, id=experiment_id)
 
 
 def setup_loggers(logger_names=['tensorboard', 'wandb'], tb_dir=None, experiment_info=None, modality=None, dataset=None, 
-        experiment_id=None, entity='self-supervised-mmhar', approach='supervised', experiment_config_path=None):
+        experiment_id=None, entity='ssl-no-negatives', approach='supervised', experiment_config_path=None):
     loggers = []
     loggers_dict = {}
     if 'tensorboard' in logger_names:

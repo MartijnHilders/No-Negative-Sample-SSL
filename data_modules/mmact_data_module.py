@@ -36,7 +36,7 @@ class MMActDataModule(MMHarDataModule):
             test_transforms = {},
 			ssl = False,
 			n_views = 2,
-            num_workers = 1,
+            num_workers = 64,
 			limited_k = None):
         super().__init__(path, modalities, batch_size, split, train_transforms, test_transforms, ssl, n_views, num_workers, limited_k)
 

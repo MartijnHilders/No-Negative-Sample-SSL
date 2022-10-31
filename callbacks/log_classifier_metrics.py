@@ -1,3 +1,4 @@
+# import pytorch_lightning.core.module as pl
 import pytorch_lightning as pl
 from torch import nn
 import torch
@@ -14,7 +15,7 @@ class LogClassifierMetrics(pl.Callback):
         self.metric_names = metric_names
         self.metric_dict = nn.ModuleDict({
             'accuracy':  torchmetrics.Accuracy(),
-            'f1-score':  torchmetrics.F1(num_classes=num_classes, average=average),
+            'f1-score':  torchmetrics.F1Score(num_classes=num_classes, average=average),
             'precision': torchmetrics.Precision(num_classes=num_classes, average=average),
             'recall':    torchmetrics.Recall(num_classes=num_classes, average=average)
         })

@@ -180,7 +180,7 @@ class MMHarDataModule(LightningDataModule, metaclass=ABCMeta):
             test_transforms = {},
             ssl = False,
             n_views = 2,
-            num_workers = 1,
+            num_workers = 64,
             limited_k=None):
         super().__init__()
         self.path = path
@@ -205,7 +205,7 @@ class MMHarDataModule(LightningDataModule, metaclass=ABCMeta):
         self.test = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, drop_last=False, num_workers=self.num_workers, pin_memory=True)
         if "val" in self.split:
             val_dataset = self._create_val_dataset()
-            self.val = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=True, drop_last=drop_last_ssl, num_workers=self.num_workers, pin_memory=True)
+            self.val = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False, drop_last=drop_last_ssl, num_workers=self.num_workers, pin_memory=True)
         else:
             self.val = None
 

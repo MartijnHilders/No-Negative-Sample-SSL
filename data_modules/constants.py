@@ -24,3 +24,5 @@ DATASET_PROPERTIES = {
         datamodule_class=CZUDataModule
     )
 }
+
+CZU_DEPTH_MAX_SAMPLE = 31

@@ -61,18 +61,18 @@ def train_test_supervised_model(args, cfg, dataset_cfg, freeze_encoder=False, ap
         class_names           = dataset_cfg["class_names"],
         num_classes           = len(dataset_cfg["class_names"]),
         no_ckpt               = args.no_ckpt,
-        model_weights_path    = args.model_save_path, 
-        metric                = 'val_' + dataset_cfg['main_metric'], 
-        dataset               = args.dataset, 
-        model                 = args.model, 
+        model_weights_path    = args.model_save_path,
+        metric                = 'val_' + dataset_cfg['main_metric'],
+        dataset               = args.dataset,
+        model                 = args.model,
         experiment_id         = experiment_id
     )
     # setup loggers: tensorboards and/or wandb
-    loggers_list, loggers_dict = setup_loggers(tb_dir="tb_logs", experiment_info=experiment_info, modality=modality, dataset=args.dataset, 
+    loggers_list, loggers_dict = setup_loggers(tb_dir="tb_logs", experiment_info=experiment_info, modality=modality, dataset=args.dataset,
         experiment_id=experiment_id, experiment_config_path=args.experiment_config_path, approach=approach)
 
-    trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, gpus=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs', 
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, checkpoint_callback=not args.no_ckpt)
+    trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing =not args.no_ckpt)
 
     trainer.fit(model, datamodule)
     trainer.test(model, datamodule, ckpt_path='best')

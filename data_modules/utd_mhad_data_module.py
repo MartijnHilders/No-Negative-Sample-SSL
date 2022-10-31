@@ -33,9 +33,9 @@ class UTDDataset(MMHarDataset):
 
 class UTDDataModule(MMHarDataModule):
 
-    def __init__(self, 
-            # path: str = "/home/data/multimodal_har_datasets/utd_mhad",
-            path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets/utd_mhad'),
+    def __init__(self,
+            # path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets/utd_mhad'),
+            path: str = "/tmp/pycharm_project_848/multimodal_har_datasets/utd_mhad",
             modalities: List[str] = ["inertial", "skeleton"],
             batch_size: int = 32,
             split = UTD_DEFAULT_SPLIT,
@@ -43,7 +43,7 @@ class UTDDataModule(MMHarDataModule):
             test_transforms = {},
 			ssl = False,
 			n_views = 2,
-            num_workers = 1,
+            num_workers = 64,
 			limited_k = None):
         super().__init__(path, modalities, batch_size, split, train_transforms, test_transforms, ssl, n_views, num_workers, limited_k)
 

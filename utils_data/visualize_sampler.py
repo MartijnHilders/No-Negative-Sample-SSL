@@ -42,6 +42,6 @@ if __name__ == '__main__':
     parser.add_argument('--sampler_size', type=int, default=None)
     parser.add_argument('--no_show', dest='show', action='store_false')
     parser.add_argument('--compare', action='store_true')
-    parser.set_defaults(save=False, show=True, compare=True, sampler_size = 1500)
+    parser.set_defaults(save=False, show=True, compare=True, sampler_size = 5500)
     args = parser.parse_args()
     main(args)

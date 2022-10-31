@@ -3,31 +3,92 @@ import numpy as np
 import cv2
 import time
 import os
+import pandas as pd
 
-import skvideo
-ffmpeg_path = "C:/Program Files/ffmpeg/bin"
-skvideo.setFFmpegPath(ffmpeg_path)
-import skvideo.datasets
-import skvideo.io
+from transforms.depth_transforms import DepthSampler
+import scipy.io
 
 from data_modules.constants import DATASET_PROPERTIES
 
-
-def frames_player(frames, snapshot_step=None):
+counter = 0
+def frames_player(frames, snapshot_step=None, compare=False):
     SNAPSHOTS_FOLDER = "snapshots"
 
     # Normalize frame values to (0,1) range (required for imshow to work correctly for all images).
     frames = frames.astype('float64') / frames.max()
 
-    for idx, frame in enumerate(frames):
-        if (snapshot_step is not None) and (idx % snapshot_step == 0):
-            if not os.path.isdir(SNAPSHOTS_FOLDER):
-                os.makedirs(SNAPSHOTS_FOLDER)
-            cv2.imwrite(f'{SNAPSHOTS_FOLDER}/{dataset}-{modality}-{dataset_idx}-{idx}.jpg', frame * 255)
+    if compare:
+        re_frames = DepthSampler(args.sampler_size)(instance_frames)
+        re_frames = re_frames.astype('float64') / re_frames.max()
 
-        cv2.imshow('Frame', frame)
-        cv2.waitKey(25)
-        time.sleep(1/15)
+        for idx in range(max(re_frames.shape[0], frames.shape[0])):
+            # if (snapshot_step is not None) and (idx % snapshot_step == 0):
+            #     if not os.path.isdir(SNAPSHOTS_FOLDER):
+            #         os.makedirs(SNAPSHOTS_FOLDER)
+            #     cv2.imwrite(f'{SNAPSHOTS_FOLDER}/{dataset}-{modality}-{dataset_idx}-{idx}.jpg', frames[idx] * 255)
+            #     cv2.imwrite(f'{SNAPSHOTS_FOLDER}/{dataset}-{modality}-{dataset_idx}-{idx}.jpg', re_frames[idx] *255)
+
+            if max(re_frames.shape[0], frames.shape[0]) == frames.shape[0]:
+                cv2.imshow('Frame', frames[idx])
+
+                if idx == re_frames.shape[0]:
+                    break
+                else:
+                    cv2.imshow('Resampled', re_frames[idx])
+
+
+                cv2.waitKey(25)
+                time.sleep(1 / 10)
+
+            else:
+                cv2.imshow('Resampled', re_frames[idx])
+
+                if idx == frames.shape[0]:
+                    break
+                else:
+                    cv2.imshow('Frame', frames[idx])
+
+                cv2.waitKey(25)
+                time.sleep(1 / 10)
+
+    else:
+
+        for idx, frame in enumerate(frames):
+            if (snapshot_step is not None) and (idx % snapshot_step == 0):
+                if not os.path.isdir(SNAPSHOTS_FOLDER):
+                    os.makedirs(SNAPSHOTS_FOLDER)
+                cv2.imwrite(f'{SNAPSHOTS_FOLDER}/{dataset}-{modality}-{dataset_idx}-{idx}.jpg', frame * 255)
+
+            cv2.imshow('Frame', frame)
+            cv2.waitKey(25)
+            time.sleep(1/15)
+
+
+def check_minmax_len(df_org):
+
+    df_temp = df_org.copy()
+    df_temp['frames'] = df_org.apply(lambda x: frames(x.path), axis=1)
+    print(df_temp.to_markdown())
+
+    groups = df_temp.groupby(['label']).min()
+    df_res = pandas.DataFrame()
+    for frame, label in zip(groups.frames.values, groups.frames.index.values):
+
+        row = df_temp[(df_temp['label'] == label) & (df_temp['frames'] == frame)]
+        df_res = pd.concat([df_res, row])
+
+    print()
+    print("result minimal frames")
+    print(df_res.to_markdown())
+
+    return
+
+def frames(path):
+    depth = scipy.io.loadmat(path)
+    global counter
+    counter += 1
+    print(counter)
+    return depth['depth'].shape[0]
 
 
 
@@ -45,8 +106,10 @@ if __name__ == '__main__':
     parser.add_argument('--modality', choices=SUPPORTED_MODALITIES, default="depth", required=False)
     parser.add_argument('--dataset_idx', type=int, default=0, help='idx to show from train dataset')
     parser.add_argument('--snapshot_step', type=int, default=None, help='if set, will save snapshots once every <snapshot_step> frames')
+    parser.add_argument('--sampler_size', type=int, default=None)
+    parser.add_argument('--compare', action='store_true')
     # parser.add_argument('--saveVideo', type=bool, required=False)
-    parser.set_defaults(dataset="czu_mhad")
+    parser.set_defaults(dataset="czu_mhad", compare=True, sampler_size=31, dataset_idx = 845) # [ idx 58 and 875]
     args = parser.parse_args()
 
     dataset = args.dataset
@@ -59,15 +122,17 @@ if __name__ == '__main__':
     datamodule.setup()
     df = datamodule.dataset_manager.data_files_df
     filtered_df = df[df["modality"] == modality]
+    # check_minmax_len(filtered_df)
 
     # Load the data for the specified instance and play it as a video.
     instance_path = filtered_df.iloc[args.dataset_idx]["path"].replace("\\","/")
     print("Instance details:\n", filtered_df.iloc[args.dataset_idx])
     instance_frames = DATASET_PROPERTIES[dataset].dataset_class._get_data_for_instance(modality, instance_path)
+    # re_frames = DepthSampler(args.sampler_size)(instance_frames)
+    # # re_frames = re_frames.astype('float64') / re_frames.max()
 
 
-
-    frames_player(instance_frames, snapshot_step=snapshot_step)
+    frames_player(instance_frames, snapshot_step=snapshot_step, compare=args.compare)
 
 
 
