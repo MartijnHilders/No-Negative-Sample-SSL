@@ -29,8 +29,8 @@ def parse_arguments():
     parser.add_argument('--model_save_path', default='./model_weights')
     
     # Pretrained encoders (required for cmc-cmkm framework, if using latent space similarity)
-    parser.add_argument('--cmkm_pretrained_encoders_config_paths', nargs='+')
-    parser.add_argument('--cmkm_pretrained_encoder_paths', nargs='+')
+    parser.add_argument('--cmkm_pretrained_encoders_config_paths', nargs='+', required=True)
+    parser.add_argument('--cmkm_pretrained_encoder_paths', nargs='+', required=True)
 
     # used to run only in fine tuning mode
     parser.add_argument('--fine_tuning', action='store_true')
@@ -39,7 +39,7 @@ def parse_arguments():
     # Other training configs.
     parser.add_argument('--no_ckpt', action='store_true', default=False)
     parser.add_argument('--online-eval', action='store_true', default=False)
-    parser.add_argument('--num-workers', default=1, type=int)
+    parser.add_argument('--num-workers', default=6, type=int)
     parser.add_argument('--sweep', action='store_true', default=False, help='Set automatically if running in WandB sweep mode. You do not need to set this manually.')
     
     return parser.parse_args()
@@ -103,7 +103,7 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt)
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37)
     trainer.fit(model, datamodule)
 
     return encoders, loggers_list, loggers_dict, experiment_id
@@ -146,7 +146,7 @@ def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, log
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt)
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37)
 
     trainer.fit(model, datamodule)
     trainer.test(model, datamodule, ckpt_path='best')

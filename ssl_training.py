@@ -33,7 +33,7 @@ def parse_arguments():
     # other training configs
     parser.add_argument('--no_ckpt', action='store_true', default=False)
     parser.add_argument('--online-eval', action='store_true', default=False)
-    parser.add_argument('--num-workers', default=1, type=int)
+    parser.add_argument('--num-workers', default=6, type=int)
     parser.add_argument('--sweep', action='store_true', default=False, help='Set automatically if running in WandB sweep mode. You do not need to set this manually.')
     
     return parser.parse_args()
@@ -137,7 +137,7 @@ def fine_tuning(args, modality, cfg, dataset_cfg, encoder, loggers_list, loggers
         split=dataset_cfg['protocols'][args.protocol], train_transforms=train_transforms, test_transforms=test_transforms,
         num_workers=args.num_workers, limited_k=limited_k)
 
-    trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
+    trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1 , deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
         val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt)
 
     trainer.fit(model, datamodule)
@@ -201,6 +201,7 @@ def validate_args(args):
 
 def main():
     args = parse_arguments()
+
     validate_args(args)
     cfg = load_yaml_to_dict(args.experiment_config_path)
     dataset_cfg = load_yaml_to_dict(args.dataset_config_path)['datasets'][args.dataset]

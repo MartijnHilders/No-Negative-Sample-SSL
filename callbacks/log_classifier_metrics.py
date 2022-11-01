@@ -1,5 +1,4 @@
-# import pytorch_lightning.core.module as pl
-import pytorch_lightning as pl
+import pytorch_lightning.core.module as pl
 from torch import nn
 import torch
 import torchmetrics
