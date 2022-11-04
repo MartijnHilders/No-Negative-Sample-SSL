@@ -15,7 +15,7 @@ class Normalize:
 
 class ToTensor:
     def __call__(self, x):
-        return torch.tensor(x)
+        return torch.from_numpy(x)
 
 class Permute:
     def __init__(self, shape):

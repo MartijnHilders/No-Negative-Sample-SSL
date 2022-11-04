@@ -315,5 +315,5 @@ class CropAndResize:
         max_crop_start = sample_length - crop_length
         crop_start = random.randint(0, max_crop_start)
         cropped = x[:, crop_start:crop_start+crop_length, :]
-        result = torch.tensor(signal.resample(cropped, self.size, axis=1)).float()
+        result = torch.from_numpy(signal.resample(cropped, self.size, axis=1)).float() #torch.tensor
         return result

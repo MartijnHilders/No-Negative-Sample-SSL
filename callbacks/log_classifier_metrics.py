@@ -41,8 +41,8 @@ class LogClassifierMetrics(pl.Callback):
         self._cache_preds_labels(outputs, batch)
 
     def _shared_eval(self, trainer, prefix):
-        labels_tensor = torch.Tensor(self.labels).int()
-        preds_tensor = torch.Tensor(self.preds).int()
+        labels_tensor = torch.tensor(self.labels).int()
+        preds_tensor = torch.tensor(self.preds).int()
         for metric_name in self.metric_names:
             if metric_name in self.metric_dict:
                 metric_val = self.metric_dict[metric_name](preds_tensor, labels_tensor)

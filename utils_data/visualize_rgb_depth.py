@@ -71,7 +71,7 @@ def check_minmax_len(df_org):
     print(df_temp.to_markdown())
 
     groups = df_temp.groupby(['label']).min()
-    df_res = pandas.DataFrame()
+    df_res = pd.DataFrame()
     for frame, label in zip(groups.frames.values, groups.frames.index.values):
 
         row = df_temp[(df_temp['label'] == label) & (df_temp['frames'] == frame)]

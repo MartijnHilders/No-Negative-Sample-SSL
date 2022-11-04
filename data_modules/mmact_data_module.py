@@ -87,6 +87,9 @@ if __name__ == '__main__':
     data_module.setup()
 
     dl = data_module.train_dataloader()
+
+    # print(len(dl))
+
     for b in dl:
         print(b.keys())
         print(b['label'].shape)

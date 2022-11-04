@@ -86,7 +86,7 @@ if __name__ == '__main__':
     # skeleton_instance = UTDSkeletonInstance(instance_path)
     # print(skeleton_instance.joints[0])
 
-    DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(os.curdir)), 'multimodal_har_datasets/utd_mhad')
+    DATA_PATH = "/home/data/multimodal_har_datasets/utd_mhad"
     instance_path_skeleton = f'{DATA_PATH}/Skeleton/a1_s1_t1_skeleton.mat'
     skeleton_instance = UTDSkeletonInstance(instance_path_skeleton)
     # print(skeleton_instance.joints[0])

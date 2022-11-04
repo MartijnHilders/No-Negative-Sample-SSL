@@ -36,7 +36,6 @@ class UTDDataset(MMHarDataset):
 class UTDDataModule(MMHarDataModule):
 
     def __init__(self,
-            # path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets/utd_mhad'),
             path: str = "/home/data/multimodal_har_datasets/utd_mhad",
             modalities: List[str] = ["inertial", "skeleton"],
             batch_size: int = 32,
@@ -85,7 +84,7 @@ def try_num_workers():
 if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
-        "skeleton": SkeletonSampler(100)
+        "skeleton": SkeletonSampler(150)
     }
 
     # try_num_workers()
@@ -94,6 +93,7 @@ if __name__ == '__main__':
     data_module.setup()
 
     dl = data_module.train_dataloader()
+
     for b in dl:
         print(b.keys())
         print(b['label'].shape)

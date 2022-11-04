@@ -2,6 +2,8 @@ from typing import List
 from numpy import int16
 import os
 from torchvision import transforms
+import multiprocessing as mp
+from time import time
 
 import datasets.czu_mhad as czu_mhad
 from data_modules import constants
@@ -12,6 +14,8 @@ from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
 from transforms.depth_transforms import DepthSampler
 from utils.experiment_utils import load_yaml_to_dict
+import cProfile
+import pstats
 
 
 CZU_DEFAULT_SPLIT = {
@@ -39,8 +43,7 @@ class CZUDataset(MMHarDataset):
 class CZUDataModule(MMHarDataModule):
 
     def __init__(self,
-                 # path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad')
-                 path: str = '/tmp/pycharm_project_848/multimodal_har_datasets/czu_mhad', #todo change to correct path
+                 path: str = '/home/data/multimodal_har_datasets/czu_mhad',
                  modalities: List[str] = ["skeleton", "inertial", "depth"],
                  batch_size: int = 32,
                  split=CZU_DEFAULT_SPLIT,
@@ -48,7 +51,7 @@ class CZUDataModule(MMHarDataModule):
                  test_transforms={},
                  ssl=False,
                  n_views=2,
-                 num_workers=6,
+                 num_workers=8,
                  limited_k=None):
         super().__init__(path, modalities, batch_size, split, train_transforms, test_transforms, ssl, n_views,
                          num_workers, limited_k)
@@ -67,6 +70,30 @@ class CZUDataModule(MMHarDataModule):
     def _create_test_dataset(self) -> MMHarDataset:
         return CZUDataset(self.modalities, self.dataset_manager, self.split["test"], transforms=self.test_transforms)
 
+def try_num_workers():
+    train_transforms = {
+        "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
+        "skeleton": SkeletonSampler(100),
+        "depth": DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)
+    }
+
+    for num_workers in range(6, mp.cpu_count(), 2):
+        data_module = CZUDataModule(batch_size=64, train_transforms=train_transforms, num_workers=num_workers)
+        data_module.setup()
+        dl = data_module.train_dataloader()
+
+        start = time()
+        epoch = 0
+        for b in dl:
+            epoch += 1
+            if epoch > 5:
+                break
+        end = time()
+        print("Finish with:{} second, num_workers={}".format(end - start, num_workers))
+        break
+
+
+
 if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
@@ -74,12 +101,15 @@ if __name__ == '__main__':
         "depth": DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)
     }
 
-    # TODO: Note that the utd_mhad database uses 1 inertial sensor and czu_mhad uses 10. therefore the matrices differ
-    # todo check if we need to fix this since every 7th reading there is one new sensor
-    # todo: add number of workers check same as the other two databases.
+    # with cProfile.Profile() as pr:
+    #     try_num_workers()
+    #
+    # stats = pstats.Stats(pr)
+    # stats.sort_stats(pstats.SortKey.TIME)
+    # stats.print_stats()
 
 
-    data_module = CZUDataModule(batch_size=64, train_transforms=train_transforms)
+    data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms)
     data_module.setup()
 
 
@@ -92,4 +122,6 @@ if __name__ == '__main__':
         print(b['inertial'].shape)
         print(b['skeleton'].shape)
         print(b['depth'].shape)
+        break
+
 

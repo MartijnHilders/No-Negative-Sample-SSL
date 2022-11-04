@@ -22,7 +22,6 @@ class CZUraw():
         print('Processing skeleton data...')
         self.process_data('Skeleton')
 
-
     def process_data(self, type):
         if type == 'Depth':
             dir_path = os.path.join(self.data_path, 'depth_mat')
@@ -58,7 +57,6 @@ def parse_arguments():
 
 
 if __name__ == '__main__':
-    # data_path = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad')
     # czu = CZUraw(data_path)
     # czu.process_dataset()
 

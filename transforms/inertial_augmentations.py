@@ -9,7 +9,7 @@ class Jittering():
 
     def __call__(self, x):
         noise = np.random.normal(loc=0, scale=self.sigma, size=x.shape)
-        x = x + torch.tensor(noise).float()
+        x = x + torch.from_numpy(noise).float()
         return x
 
 class Scaling():
@@ -26,7 +26,7 @@ class Rotation():
         pass
 
     def __call__(self, x):
-        flip = torch.tensor(np.random.choice([-1, 1], size=(x.shape)))
+        flip = torch.from_numpy(np.random.choice([-1, 1], size=(x.shape)))
         return flip * x
 
 class ChannelShuffle():
