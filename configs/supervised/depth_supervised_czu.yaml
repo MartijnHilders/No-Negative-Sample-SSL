@@ -1,0 +1,25 @@
+experiment:
+  seed: 28
+  num_epochs: 100
+
+modalities:
+  depth:
+    model:
+      resnet:
+        class_name: ResNet
+        from_module: depth
+        args: []
+        kwargs:
+          batch_size: 64
+          lr: 0.001
+          sample_length: 31
+          resnet_type: 50
+          optimizer_name: "adam"
+          metric_name: "accuracy"
+    transforms:
+      - class_name: DepthSampler
+        from_module: depth_transforms
+        transform_name: sampling
+        in_test: true
+        kwargs:
+          size: 31

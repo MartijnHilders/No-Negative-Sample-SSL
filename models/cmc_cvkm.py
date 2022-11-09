@@ -49,8 +49,6 @@ class MM_NTXent_CVKM(LightningModule):
         positives_mask = torch.eye(N).bool().repeat([2, 1]).to(self.device)
         negatives_mask = ~positives_mask
 
-        # TODO maybe: build a big matrix with all 4 similarities, like the diagram in the paper? maybe it would simplify some of this logic.
-
         # Cross-view knowledge mining, only applied during training and depending on the provided cmkm_config.
         if training:
             # Use the provided similarity metric to compute the intra-modality similarities and connectivity.
