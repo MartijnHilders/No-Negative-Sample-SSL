@@ -16,6 +16,17 @@ modalities:
           resnet_type: 50
           optimizer_name: "adam"
           metric_name: "accuracy"
+      videonet:
+        class_name: VideoNet
+        from_module: depth
+        args: [ ]
+        kwargs:
+          batch_size: 64
+          lr: 0.001
+          sample_length: 31
+          model_type: "res"
+          optimizer_name: "adam"
+          metric_name: "accuracy"
     transforms:
       - class_name: DepthSampler
         from_module: depth_transforms
