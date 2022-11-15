@@ -60,8 +60,15 @@ class CZUDepthInstance(CZUInstance):
         self.image = self.read_depth()
 
     def read_depth(self):
-        depth = scipy.io.loadmat(self._file)
-        return depth['depth']
+        data = scipy.io.loadmat(self._file)
+        depth = self.transform_depth(data)
+        return depth
+
+    @staticmethod  # convert grey scale to RGB
+    def transform_depth(depth):
+        data = depth['depth']
+        transformation = np.stack((data,) * 3, axis=-1)  # correct shape: {frames, height, width, channels}
+        return transformation
 
 
 

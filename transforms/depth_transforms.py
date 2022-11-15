@@ -30,15 +30,13 @@ class DepthSampler:
 
         d_frames = None
         for chunk in chunks:
-            frame = random.choice(chunk)
+            frame = random.choice(chunk)[np.newaxis, :]
 
             if d_frames is None:
                 d_frames = frame
 
             else:
-                d_frames = np.dstack((d_frames, frame))
-
-        d_frames = np.moveaxis(d_frames, -1, 0)
+                d_frames = np.concatenate((d_frames, frame))
 
         return d_frames
 

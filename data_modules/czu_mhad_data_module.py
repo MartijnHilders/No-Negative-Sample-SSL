@@ -122,6 +122,7 @@ if __name__ == '__main__':
         print(b['inertial'].shape)
         print(b['skeleton'].shape)
         print(b['depth'].shape)
+
         break
 
 

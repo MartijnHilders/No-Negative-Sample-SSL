@@ -26,7 +26,9 @@ class ResNet(LightningModule):
         self.optimizer_name = optimizer_name
 
     def forward(self, x):
-        print(x) # todo we might unpack here but then we only train on last frame..
+        print(x)
+        x = torch.reshape(x, (-1, x.shape[2], x.shape[3], x.shape[4]))  # unpack by reshaping
+        x = torch.swapaxes(x, 1, -1)
         x = self.model(x)
         return x
 

@@ -109,7 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampler_size', type=int, default=None)
     parser.add_argument('--compare', action='store_true')
     # parser.add_argument('--saveVideo', type=bool, required=False)
-    parser.set_defaults(dataset="utd_mhad", compare=True, sampler_size=100) # [ idx 58 and 875]
+    parser.set_defaults(dataset="czu_mhad", compare=True, sampler_size=100) # [ idx 58 and 875]
     args = parser.parse_args()
 
     dataset = args.dataset
