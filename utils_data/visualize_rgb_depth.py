@@ -5,7 +5,7 @@ import time
 import os
 import pandas as pd
 
-from transforms.depth_transforms import DepthSampler
+from transforms.depth_transforms import DepthSampler, DepthResize, ToRGB
 import scipy.io
 
 from data_modules.constants import DATASET_PROPERTIES
@@ -18,7 +18,10 @@ def frames_player(frames, snapshot_step=None, compare=False):
     frames = frames.astype('float64') / frames.max()
 
     if compare:
+        # check the Depth transforms
         re_frames = DepthSampler(args.sampler_size)(instance_frames)
+        re_frames = ToRGB()(re_frames)
+        re_frames = DepthResize(*args.resize)(re_frames)
         re_frames = re_frames.astype('float64') / re_frames.max()
 
         for idx in range(max(re_frames.shape[0], frames.shape[0])):
@@ -63,7 +66,7 @@ def frames_player(frames, snapshot_step=None, compare=False):
             cv2.waitKey(25)
             time.sleep(1/15)
 
-
+#todo checks min/max frames throughout dataset
 def check_minmax_len(df_org):
 
     df_temp = df_org.copy()
@@ -108,8 +111,9 @@ if __name__ == '__main__':
     parser.add_argument('--snapshot_step', type=int, default=None, help='if set, will save snapshots once every <snapshot_step> frames')
     parser.add_argument('--sampler_size', type=int, default=None)
     parser.add_argument('--compare', action='store_true')
-    # parser.add_argument('--saveVideo', type=bool, required=False)
-    parser.set_defaults(dataset="czu_mhad", compare=True, sampler_size=100) # [ idx 58 and 875]
+    parser.add_argument('--resize', type=list, required=False)
+    parser.add_argument('--saveVideo', type=bool, default=None)
+    parser.set_defaults(dataset="czu_mhad", compare=True, sampler_size=100, resize=[212, 256])  # [ idx 58 and 875]
     args = parser.parse_args()
 
     dataset = args.dataset

@@ -25,7 +25,7 @@ class ResNet(LightningModule):
         self.lr = lr
         self.optimizer_name = optimizer_name
 
-    # todo memory issues!
+    # todo memory issues and wrong in batch size, check how to fix (create for loop)!
     def forward(self, x):
         x = torch.reshape(x, (-1, x.shape[2], x.shape[3], x.shape[4]))  # unpack by reshaping
         x = torch.permute(x, (0, -1, 1, 2)).float()  # put into correct shape for the model.
@@ -86,7 +86,8 @@ class VideoNet(LightningModule):
                  **kwargs):
 
         super().__init__()
-        video = {"res": models.video.r3d_18, "mvit": models.video.mvit_v1_b , "s3d": models.video.s3d} #todo need to adapt for the latter 2
+        # todo need to adapt for the latter 2, these are sequential type
+        video = {"res": models.video.r3d_18, "mvit": models.video.mvit_v1_b , "s3d": models.video.s3d}
         self.model = video[model_type](weights=None)  # initialize randomly
         in_size = list(self.model.children())[-1].in_features
         self.classifier = nn.Linear(in_size, out_size)

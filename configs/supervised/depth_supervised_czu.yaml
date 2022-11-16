@@ -1,6 +1,6 @@
 experiment:
   seed: 28
-  num_epochs: 100
+  num_epochs: 50
 
 modalities:
   depth:
@@ -10,10 +10,10 @@ modalities:
         from_module: depth
         args: []
         kwargs:
-          batch_size: 64
+          batch_size: 32
           lr: 0.001
           sample_length: 31
-          resnet_type: 50
+          resnet_type: 34
           optimizer_name: "adam"
           metric_name: "accuracy"
       videonet:
@@ -21,7 +21,7 @@ modalities:
         from_module: depth
         args: [ ]
         kwargs:
-          batch_size: 64
+          batch_size: 32
           lr: 0.001
           sample_length: 31
           model_type: "res"
@@ -34,3 +34,15 @@ modalities:
         in_test: true
         kwargs:
           size: 31
+      - class_name: DepthResize
+        from_module: depth_transforms
+        transform_name: resizing
+        in_test: true
+        kwargs:
+          height: 50 #100
+          width: 70 #120
+      - class_name: ToRGB
+        from_module: depth_transforms
+        transform_name: RGBconvert
+        in_test: true
+
