@@ -1,6 +1,6 @@
 experiment:
   seed: 28
-  num_epochs: 50
+  num_epochs: 100
 
 modalities:
   depth:
@@ -39,8 +39,8 @@ modalities:
         transform_name: resizing
         in_test: true
         kwargs:
-          height: 50 #100
-          width: 70 #120
+          height: 100 #50
+          width: 120 #70
       - class_name: ToRGB
         from_module: depth_transforms
         transform_name: RGBconvert

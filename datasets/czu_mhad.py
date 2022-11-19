@@ -6,6 +6,11 @@ import pandas as pd
 import sys
 
 
+import cv2 #todo remcve
+import time
+
+
+
 DATA_EXTENSIONS = {'.mat'}
 
 
@@ -61,7 +66,41 @@ class CZUDepthInstance(CZUInstance):
 
     def read_depth(self):
         data = scipy.io.loadmat(self._file)
-        return data['depth']
+        depth = self.preprocess_depth(data)
+        return depth
+
+    def preprocess_depth(self, data):
+        depth = data['depth']
+        percentage_width = int((depth.shape[2]/100) * 20)
+        height_crop = [50, depth.shape[1]]
+        width_crop = [percentage_width, depth.shape[2] - percentage_width]
+
+        # create bounding box for the images (crop to only show subject) and filter on colors.
+        cropped = None
+        for idx in range(depth.shape[0]):
+
+            ar = depth[idx][height_crop[0]:height_crop[1], width_crop[0]:width_crop[1]][np.newaxis]
+            # ar = np.apply_over_axes #todo apply filter to image
+            
+
+            if cropped is None:
+                cropped = ar
+
+            cropped = np.concatenate([cropped, ar])
+
+        return cropped
+
+    # taken from paper CZU-MHAD: https://arxiv.org/pdf/2202.03283.pdf
+    # todo: reference
+    def color_filter(self, x):
+        if 0 < x < 70:
+            return 0
+        elif 70 <= x <= 98:
+            return ((x-70)/28)*256
+        else:
+            return 0
+
+
 
 class CZUInertialInstance(CZUInstance):
     def __init__(self, file_):
@@ -133,7 +172,8 @@ class CZUSkeletonInstance(CZUInstance):
 
 
 if __name__ == '__main__':
-    DATA_PATH = '/home/data/multimodal_har_datasets/czu_mhad'
+    # DATA_PATH = '/home/data/multimodal_har_datasets/czu_mhad'
+    DATA_PATH =  os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad')
 
     instance_path_skeleton = f'{DATA_PATH}/Skeleton/x1_a1_t1.mat'
     skeleton_instance = CZUSkeletonInstance(instance_path_skeleton)

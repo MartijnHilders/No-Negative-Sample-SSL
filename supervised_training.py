@@ -74,7 +74,6 @@ def train_test_supervised_model(args, cfg, dataset_cfg, freeze_encoder=False, ap
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
         val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing =not args.no_ckpt)
 
-    # todo need to find a way to unpack and sum results of the neural network + if 1 channel create RGB np.repeat all channels
     trainer.fit(model, datamodule)
     trainer.test(model, datamodule, ckpt_path='best')
 

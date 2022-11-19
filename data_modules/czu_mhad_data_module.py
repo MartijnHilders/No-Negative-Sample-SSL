@@ -43,7 +43,8 @@ class CZUDataset(MMHarDataset):
 class CZUDataModule(MMHarDataModule):
 
     def __init__(self,
-                 path: str = '/home/data/multimodal_har_datasets/czu_mhad',
+                 # path: str = '/home/data/multimodal_har_datasets/czu_mhad',
+                 path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad'),
                  modalities: List[str] = ["skeleton", "inertial", "depth"],
                  batch_size: int = 32,
                  split=CZU_DEFAULT_SPLIT,
@@ -105,18 +106,16 @@ if __name__ == '__main__':
     data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms)
     data_module.setup()
 
-    try_num_workers()
+    dl = data_module.train_dataloader()
+    print(len(dl))
 
-    # dl = data_module.train_dataloader()
-    # print(len(dl))
-    #
-    # for b in dl:
-    #     print(b.keys())
-    #     print(b['label'].shape)
-    #     print(b['inertial'].shape)
-    #     print(b['skeleton'].shape)
-    #     print(b['depth'].shape)
-    #
-    #     break
+    for b in dl:
+        print(b.keys())
+        print(b['label'].shape)
+        print(b['inertial'].shape)
+        print(b['skeleton'].shape)
+        print(b['depth'].shape)
+
+        break
 
 

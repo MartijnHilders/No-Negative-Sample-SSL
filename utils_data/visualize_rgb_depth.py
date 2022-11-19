@@ -21,7 +21,7 @@ def frames_player(frames, snapshot_step=None, compare=False):
         # check the Depth transforms
         re_frames = DepthSampler(args.sampler_size)(instance_frames)
         re_frames = ToRGB()(re_frames)
-        re_frames = DepthResize(*args.resize)(re_frames)
+        # re_frames = DepthResize(*args.resize)(re_frames)
         re_frames = re_frames.astype('float64') / re_frames.max()
 
         for idx in range(max(re_frames.shape[0], frames.shape[0])):
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--compare', action='store_true')
     parser.add_argument('--resize', type=list, required=False)
     parser.add_argument('--saveVideo', type=bool, default=None)
-    parser.set_defaults(dataset="czu_mhad", compare=True, sampler_size=100, resize=[212, 256])  # [ idx 58 and 875]
+    parser.set_defaults(dataset="czu_mhad", compare=True, sampler_size=31, resize=[212, 256], dataset_idx = 171)  # [ idx 58 and 875]
     args = parser.parse_args()
 
     dataset = args.dataset
@@ -131,12 +131,17 @@ if __name__ == '__main__':
     # Load the data for the specified instance and play it as a video.
     instance_path = filtered_df.iloc[args.dataset_idx]["path"].replace("\\","/")
     print("Instance details:\n", filtered_df.iloc[args.dataset_idx])
-    instance_frames = DATASET_PROPERTIES[dataset].dataset_class._get_data_for_instance(modality, instance_path)
-    # re_frames = DepthSampler(args.sampler_size)(instance_frames)
-    # # re_frames = re_frames.astype('float64') / re_frames.max()
+
+    grouped = filtered_df.groupby(['label'])
+
+    # check if every thing is inside box
+    for group in grouped.groups.keys():
+        instance_path = filtered_df.iloc[grouped.groups[group][0]]["path"].replace("\\", "/")
+        instance_frames = DATASET_PROPERTIES[dataset].dataset_class._get_data_for_instance(modality, instance_path)
+        frames_player(instance_frames, snapshot_step=snapshot_step, compare=args.compare)
 
 
-    frames_player(instance_frames, snapshot_step=snapshot_step, compare=args.compare)
+
 
 
 
