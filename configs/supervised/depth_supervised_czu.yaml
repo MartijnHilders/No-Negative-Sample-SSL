@@ -21,7 +21,7 @@ modalities:
         from_module: depth
         args: [ ]
         kwargs:
-          batch_size: 32
+          batch_size: 64
           lr: 0.001
           sample_length: 31
           model_type: "res"
@@ -39,10 +39,24 @@ modalities:
         transform_name: resizing
         in_test: true
         kwargs:
-          height: 100 #50
-          width: 120 #70
+          crop: true
+          height: 90 #187 130
+          width: 70 #154 100
       - class_name: ToRGB
         from_module: depth_transforms
         transform_name: RGBconvert
+        in_test: true
+      - class_name: ToTensor
+        from_module: general_transforms
+        in_test: true
+      - class_name: Permute
+        from_module: general_transforms
+        transform_name: permutation
+        in_test: true
+        kwargs:
+          shape: [ -1, 0, 1, 2 ]
+      - class_name: ToFloat
+        transform_name: to_float
+        from_module: general_transforms
         in_test: true
 

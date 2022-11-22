@@ -16,21 +16,23 @@ class ResNet(LightningModule):
         super().__init__()
 
         resnet = {34: models.resnet34, 50: models.resnet50, 101: models.resnet101}
-        self.model = resnet[resnet_type](weights=None)  # initialize randomly
-        in_size = list(self.model.children())[-1].in_features
+        self.res_net = resnet[resnet_type](weights=None)  # initialize randomly
+        in_size = self.res_net.fc.in_features
+        self.res_net.fc = Identity(in_size=in_size)
+
         self.classifier = nn.Linear(in_size, out_size)
-        self.model.fc = self.classifier
         self.loss = nn.CrossEntropyLoss() #todo check loss function
         self.metric_scheduler = metric_scheduler
         self.lr = lr
         self.optimizer_name = optimizer_name
+        self.out_size = out_size
 
     # todo memory issues and wrong in batch size, check how to fix (create for loop)!
     def forward(self, x):
         x = torch.reshape(x, (-1, x.shape[2], x.shape[3], x.shape[4]))  # unpack by reshaping
         x = torch.permute(x, (0, -1, 1, 2)).float()  # put into correct shape for the model.
         x = self.model(x)
-        return x
+        return self.classifier(x)
 
     def training_step(self, batch, batch_idx):
         x = batch['depth']
@@ -88,19 +90,19 @@ class VideoNet(LightningModule):
         super().__init__()
         # todo need to adapt for the latter 2, these are sequential type
         video = {"res": models.video.r3d_18, "mvit": models.video.mvit_v1_b , "s3d": models.video.s3d}
-        self.model = video[model_type](weights=None)  # initialize randomly
-        in_size = list(self.model.children())[-1].in_features
+        self.video_net = video[model_type](weights=None)
+        in_size = self.video_net.fc.in_features
+        self.video_net.fc = Identity(in_size=in_size)  # add identity layer to keep flexibility in last layer
+
         self.classifier = nn.Linear(in_size, out_size)
-        self.model.fc = self.classifier
         self.loss = nn.CrossEntropyLoss()  # todo check loss function
         self.metric_scheduler = metric_scheduler
         self.lr = lr
         self.optimizer_name = optimizer_name
 
     def forward(self, x):
-        x = torch.permute(x, (0, -1, 1, 2, 3)).float()  # put into correct shape for the model.
-        x = self.model(x)
-        return x
+        x = self.video_net(x)
+        return self.classifier(x)
 
     def training_step(self, batch, batch_idx):
         x = batch['depth']
@@ -143,5 +145,11 @@ class VideoNet(LightningModule):
             }
         }
 
+# create custom identity layer to safe the sizes
+class Identity(nn.Module):
+    def __init__(self, in_size):
+        super().__init__()
+        self.out_size = in_size
 
-
+    def forward(self, x):
+        return x

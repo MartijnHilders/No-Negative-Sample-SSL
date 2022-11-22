@@ -27,3 +27,10 @@ class Permute:
 class ToFloat:
     def __call__(self, x):
         return x.float()
+
+# class Transpose:
+#     def __init__(self, shape):
+#         self.shape = shape
+#
+#     def __call__(self, x):
+#         return np.transpose(x, self.shape)

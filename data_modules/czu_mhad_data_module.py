@@ -43,8 +43,8 @@ class CZUDataset(MMHarDataset):
 class CZUDataModule(MMHarDataModule):
 
     def __init__(self,
-                 # path: str = '/home/data/multimodal_har_datasets/czu_mhad',
-                 path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad'),
+                 path: str = '/home/data/multimodal_har_datasets/czu_mhad',
+                 # path: str = os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad'),
                  modalities: List[str] = ["skeleton", "inertial", "depth"],
                  batch_size: int = 32,
                  split=CZU_DEFAULT_SPLIT,
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(100),
-        "depth": transforms.Compose([ToRGB(), DepthResize(212, 256), DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)])
+        "depth": transforms.Compose([ToRGB(), DepthResize(True, 212, 256), DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)])
     }
 
     data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms)

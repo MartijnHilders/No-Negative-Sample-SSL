@@ -8,7 +8,7 @@ datasets:
     skeleton: # These will be passed as kwargs to the LightningModule class for skeleton models.
       input_channels: 3
       n_joints: 20
-      output_size: 27
+      out_size: 27
       dataset: utd_mhad
       center_joint: 2
     main_metric: accuracy
@@ -36,7 +36,7 @@ datasets:
     skeleton: # These will be passed as kwargs to the LightningModule class for skeleton models.
       input_channels: 2
       n_joints: 17
-      output_size: 36
+      out_size: 36
       dataset: mmact
       center_joint: 0
     main_metric: f1-score
@@ -74,7 +74,7 @@ datasets:
     skeleton: # These will be passed as kwargs to the LightningModule class for skeleton models.
       input_channels: 3
       n_joints: 25
-      output_size: 22 #number of activities
+      out_size: 22 #number of activities
       dataset: czu_mhad
       center_joint: 2
     depth:  # These will be passed as kwargs to the LightningModule class for depth models.

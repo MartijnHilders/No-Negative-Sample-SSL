@@ -19,7 +19,7 @@ MMACT_DEFAULT_SPLIT = {
 class MMActDataset(MMHarDataset):
     @staticmethod
     def _supported_modalities() -> List[str]:
-        return ["inertial", "skeleton"]
+        return ["inertial", "skeleton", "rgb"]
     
     @staticmethod
     def _get_data_for_instance(modality, path):
@@ -31,7 +31,7 @@ class MMActDataset(MMHarDataset):
 class MMActDataModule(MMHarDataModule):
     def __init__(self, 
             path: str = "/home/data/multimodal_har_datasets/mmact_new",
-            modalities: List[str] = ["inertial", "skeleton"],
+            modalities: List[str] = ["inertial", "skeleton", "rgb"],
             batch_size: int = 32,
             split = MMACT_DEFAULT_SPLIT,
             train_transforms = {},

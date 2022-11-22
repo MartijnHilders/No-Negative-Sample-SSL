@@ -21,9 +21,9 @@ class MultiModalClassifier(LightningModule):
     lr : float
         learning rate
     """
-    def __init__(self, 
-        models_dict,  
-        out_size, 
+    def __init__(self,
+        models_dict,
+        out_size,
         hidden=[256, 128],
         modalities = ['inertial', 'skeleton'],
         optimizer_name='adam',
@@ -41,13 +41,19 @@ class MultiModalClassifier(LightningModule):
         self.projections = {}
         for modality in self.modalities:
             self.encoders_out_size += hidden[0]
+            try:
+                in_size = self.models_dict[modality].fc.out_size
+            except:
+                in_size = self.models_dict[modality].out_size
+
             self.projections[modality] = nn.Sequential(
-                nn.Linear(self.models_dict[modality].out_size, hidden[0]),
+                nn.Linear(in_size, hidden[0]),
                 nn.BatchNorm1d(hidden[0]),
                 nn.ReLU(inplace=True)
             )
             if freeze_encoders:
                 self.models_dict[modality].freeze()
+
         self.projections = nn.ModuleDict(self.projections)
         self.flatten = nn.Flatten()
         self.classifier = nn.Linear(self.encoders_out_size, out_size)

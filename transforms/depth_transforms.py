@@ -47,12 +47,14 @@ class DepthSampler:
 # reshape the height and width of the images
 class DepthResize:
 
-    def __init__(self, height, width):
+    def __init__(self, crop, height, width):
         """
-        Initiate sampler with the size to reshape to
+        Initiate sampler with the size to reshape to, if crop is true we also center
+        :param crop: true (czu-mhad only)
         :param height: int
         :param width: int
         """
+        self.crop = crop
         self.height = height
         self.width = width
 
@@ -67,10 +69,20 @@ class DepthResize:
         return x
 
     # maybe fixate interpolation mode to NEAREST to also use when upsampling
+    # todo search for a speed up? Check why it adds another frame and remove/resolve
     def resize_RGB(self, x):
+        percentage_width = int((x.shape[2] / 100) * 20)
+        height_crop = [50, x.shape[1]]
+        width_crop = [percentage_width, x.shape[2] - percentage_width]
+
         resized = None
         for idx in range(x.shape[0]):
-            im = Image.fromarray(x[idx], mode="RGB").resize((self.width, self.height))
+            if self.crop:
+                ar = x[idx][height_crop[0]:height_crop[1], width_crop[0]:width_crop[1]]
+            else:
+                ar = x[idx]
+
+            im = Image.fromarray(ar, mode="RGB").resize((self.width, self.height))
             ar = np.asarray(im)[np.newaxis]
 
             if resized is None:
@@ -80,10 +92,20 @@ class DepthResize:
 
         return resized
 
+
     def resize_GREY(self, x):
+        percentage_width = int((x.shape[2] / 100) * 20)
+        height_crop = [50, x.shape[1]]
+        width_crop = [percentage_width, x.shape[2] - percentage_width]
+
         resized = None
         for idx in range(x.shape[0]):
-            im = Image.fromarray(x[idx], mode="L").resize((self.width, self.height))
+            if self.crop:
+                ar = x[idx][height_crop[0]:height_crop[1], width_crop[0]:width_crop[1]]
+            else:
+                ar = x[idx]
+
+            im = Image.fromarray(ar, mode="L").resize((self.width, self.height))
             ar = np.asarray(im)
 
             if resized is None:
