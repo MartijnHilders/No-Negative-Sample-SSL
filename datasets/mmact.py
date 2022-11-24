@@ -4,9 +4,7 @@ import string
 import numpy as np
 import pandas as pd
 import tqdm
-import skvideo.io
-import cv2
-
+import decord
 
 DATA_EXTENSIONS = {'.csv', '.npy', '.mp4'}
 
@@ -55,21 +53,13 @@ class MMActRGBInstance(MMActInstance):
         super(MMActRGBInstance, self).__init__(file_)
         self.video = self.read_rgb(file_)
 
-    def read_rgb(self, file):
-        cap = cv2.VideoCapture(file)
-        RGB = []
+    @staticmethod
+    def convert_RGB(file):
+        vr = decord.VideoReader(file)
+        # decord.bridge.set_bridge('torch')
+        print('native output:', type(vr[0]), vr[0].shape)
 
-        while cap.isOpened():
-            ret, frame = cap.read()
-
-            if not ret:
-                break
-
-            converted = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            RGB.append(converted)
-
-        print(np.array(RGB).shape)
-        return np.array(RGB)
+        return vr
 
 class MMActInertialInstance(MMActInstance):
     def __init__(self, file_):

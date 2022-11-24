@@ -1,12 +1,18 @@
 import argparse
 import json
 import os
+import time
+import timeit
 
 from shutil import unpack_archive, rmtree
 import numpy as np
 import pandas as pd
+import cv2
 from tqdm import tqdm
 from scipy.signal import resample
+from vidgear.gears import VideoGear
+import decord
+
 
 ACTIVITY_DICT = {
     'carrying': 1,
@@ -65,14 +71,15 @@ class MmactRaw():
         self.process_mp4 = process_mp4
 
     def process_dataset(self):
-
-
-        # print('Processing inertial data...')
-        # self.process_inertial_data()
-        # print('Processing pose data...')
-        # self.process_pose_data()
-        print('Processing RGB data..')
-        self.process_rgb()
+        if self.process_mp4:
+            self.process_mp4_data()
+        else:
+            # print('Processing inertial data...')
+            # self.process_inertial_data()
+            # print('Processing pose data...')
+            # self.process_pose_data()
+            print('Processing RGB data..')
+            self.process_rgb()
 
     def process_inertial_data(self):
         inertial_sources = ["acc_phone_clip", "acc_watch_clip", "gyro_clip", "orientation_clip"]
@@ -237,7 +244,7 @@ class MmactRaw():
         # Cleanup extracted data.
         rmtree(tmp_destination)
 
-    #todo finish for the raw preprocessing
+    #todo finish for the raw preprocessing of the RGB zip folders
     def process_rgb(self):
         rgb_source = "video"
         tmp_destination = os.path.join(self.data_path, "rgb_tmp")
@@ -254,21 +261,105 @@ class MmactRaw():
         filenames = next(os.walk(os.path.join(self.data_path, rgb_source)), (None, None, []))[2]
         print(filenames)
 
-
     def process_mp4_data(self):
         rgb_source = "RGB"
-        
+        tmp_destination = os.path.join(self.data_path, "RGB_np")
+        rgb_dir = os.path.join(self.data_path, rgb_source)
+        os.makedirs(tmp_destination, exist_ok=True)
 
+        print("converting mp4 data...")
+        filenames = next(os.walk(rgb_dir), (None, None, []))[2]
+        for file in tqdm(filenames):
+            name = file.split('.')[0]
+            file_path = os.path.join(rgb_dir, file)
+            t1 = time.perf_counter()
+            np_arr = self.convert_mp4_parallel(file_path)
+            t2 = time.perf_counter()
+
+            t3 = time.perf_counter()
+            np_arr = self.convert_mp4_speed(file_path)
+            t4 = time.perf_counter()
+
+            print(f'bridge: {t2 - t1}')
+            print(f'speed: {t4 - t3}')
+            # print(np_arr.shape)
+            dest = os.path.join(tmp_destination, name)
+
+            # # todo try to save as hdf5 instead of numpy
+            # np.save(file=dest, arr=np_arr)
+
+    #todo speed up opencv frame extraction/parallel computing or use vidgear
+    @staticmethod
+    def convert_mp4(file):
+        cap = cv2.VideoCapture(file)
+        RGB = []
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+
+            if not ret:
+                break
+
+            scale_percent = 20  # percent of original size
+            width = int(frame.shape[1] * scale_percent / 100)
+            height = int(frame.shape[0] * scale_percent / 100)
+            dim = (width, height)
+
+            resized = cv2.resize(frame, dim)
+            converted = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+
+            # resize before saving?
+
+            RGB.append(converted)
+
+        return np.array(RGB)
+
+    @staticmethod
+    def convert_mp4_speed(file):
+        scale_percent = 20  # percent of original size
+        width = int(1920 * scale_percent / 100)
+        height = int(1080 * scale_percent / 100)
+        dim = (width, height)
+
+        stream = VideoGear(source=file).start()
+        RGB = []
+
+        while True:
+            frame = stream.read()
+
+            if frame is None:
+                break
+
+            resized = cv2.resize(frame, dim)
+            converted = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+
+            RGB.append(converted)
+
+        cv2.destroyAllWindows()
+        stream.stop()
+
+
+        return np.array(RGB)
+
+    @staticmethod
+    def convert_mp4_parallel(file, group_number=0):
+        vr = decord.VideoReader(file)
+        print(vr[0].tolist())
+        # decord.bridge.set_bridge('torch')
+        # print('native output:', type(vr[0]), vr[0].shape)
+
+        return vr
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, help='initial data path', required=True)
     parser.add_argument('--destination_path', type=str, help='destination path', required=True)
+    parser.add_argument('--process_mp4', type=bool, help='if only want to convert mp4 files', required=False, default=False)
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_arguments()
-    mmact = MmactRaw(args.data_path, args.destination_path)
+    mmact = MmactRaw(args.data_path, args.destination_path, args.process_mp4)
     mmact.process_dataset()
