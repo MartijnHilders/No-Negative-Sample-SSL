@@ -14,8 +14,7 @@ from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
 from transforms.depth_transforms import DepthSampler, DepthResize, ToRGB
 from utils.experiment_utils import load_yaml_to_dict
-import cProfile
-import pstats
+import time
 
 
 CZU_DEFAULT_SPLIT = {
@@ -100,22 +99,19 @@ if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(100),
-        "depth": transforms.Compose([ToRGB(), DepthResize(True, 212, 256), DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)])
+        "depth": transforms.Compose([DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE), DepthResize(True, 212, 256), ToRGB()])
     }
 
-    data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms)
+    data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms, num_workers=8)
     data_module.setup()
 
     dl = data_module.train_dataloader()
-    print(len(dl))
 
     for b in dl:
         print(b.keys())
         print(b['label'].shape)
         print(b['inertial'].shape)
-        print(b['skeleton'].shape)
         print(b['depth'].shape)
-
+        print(b['skeleton'].shape)
         break
-
 

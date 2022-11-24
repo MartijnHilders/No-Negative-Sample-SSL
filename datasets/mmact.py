@@ -54,12 +54,10 @@ class MMActRGBInstance(MMActInstance):
         self.video = self.read_rgb(file_)
 
     @staticmethod
-    def convert_RGB(file):
+    def read_rgb(file):
         vr = decord.VideoReader(file)
-        # decord.bridge.set_bridge('torch')
-        print('native output:', type(vr[0]), vr[0].shape)
-
-        return vr
+        decord.bridge.set_bridge('torch') # directly compatible with torch tensor
+        return vr[0]
 
 class MMActInertialInstance(MMActInstance):
     def __init__(self, file_):

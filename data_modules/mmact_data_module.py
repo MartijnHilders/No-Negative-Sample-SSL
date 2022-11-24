@@ -9,7 +9,7 @@ from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
 from transforms.depth_transforms import DepthSampler, DepthResize
 import multiprocessing as mp
-from time import time
+import time
 
 MMACT_DEFAULT_SPLIT = {
     "train": {"subject": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]},
@@ -87,12 +87,10 @@ if __name__ == '__main__':
 
     # try_num_workers()
 
-    data_module = MMActDataModule(batch_size=8, train_transforms=train_transforms, num_workers=64)
+    data_module = MMActDataModule(batch_size=8, train_transforms=train_transforms, num_workers=8)
     data_module.setup()
 
     dl = data_module.train_dataloader()
-
-    # print(len(dl))
 
     for b in dl:
         print(b.keys())
@@ -101,4 +99,3 @@ if __name__ == '__main__':
         print(b['rgb'].shape)
         print(b['skeleton'].shape)
         break
-
