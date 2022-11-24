@@ -4,6 +4,8 @@ import string
 import numpy as np
 import pandas as pd
 import tqdm
+import skvideo.io
+import cv2
 
 
 DATA_EXTENSIONS = {'.csv', '.npy', '.mp4'}
@@ -51,10 +53,22 @@ class MMActInstance:
 class MMActRGBInstance(MMActInstance):
     def __init__(self, file_):
         super(MMActRGBInstance, self).__init__(file_)
-        self.signal = self.read_rgb()
+        self.video = self.read_rgb(file_)
 
-    def read_rgb(self):
-        RGB = skvideo.io.vread("video_file_name") #todo when implementing rgb we need to change for ffmpeg path
+    def read_rgb(self, file):
+        cap = cv2.VideoCapture(file)
+        RGB = []
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+
+            if not ret:
+                break
+
+            converted = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            RGB.append(converted)
+
+        print(np.array(RGB).shape)
         return np.array(RGB)
 
 class MMActInertialInstance(MMActInstance):

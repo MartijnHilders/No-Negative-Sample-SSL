@@ -59,15 +59,20 @@ class MmactRaw():
         trimmed_pose.zip (from challenge data)
     """
 
-    def __init__(self, data_path, destination) -> None:
+    def __init__(self, data_path, destination, process_mp4) -> None:
         self.data_path = data_path
         self.destination = destination
+        self.process_mp4 = process_mp4
 
     def process_dataset(self):
-        print('Processing inertial data...')
-        self.process_inertial_data()
-        print('Processing pose data...')
-        self.process_pose_data()
+
+
+        # print('Processing inertial data...')
+        # self.process_inertial_data()
+        # print('Processing pose data...')
+        # self.process_pose_data()
+        print('Processing RGB data..')
+        self.process_rgb()
 
     def process_inertial_data(self):
         inertial_sources = ["acc_phone_clip", "acc_watch_clip", "gyro_clip", "orientation_clip"]
@@ -231,6 +236,29 @@ class MmactRaw():
 
         # Cleanup extracted data.
         rmtree(tmp_destination)
+
+    #todo finish for the raw preprocessing
+    def process_rgb(self):
+        rgb_source = "video"
+        tmp_destination = os.path.join(self.data_path, "rgb_tmp")
+        rgb_dir = os.path.join(self.data_path, rgb_source)
+
+        # unpack the video zip files
+        print("Unzipping rgb data archives...")
+        filenames = next(os.walk(rgb_dir), (None, None, []))[2]
+        for file in filenames:
+            print(file)
+            zip_path = os.path.join(rgb_dir, file)
+            unpack_archive(zip_path, tmp_destination)
+
+        filenames = next(os.walk(os.path.join(self.data_path, rgb_source)), (None, None, []))[2]
+        print(filenames)
+
+
+    def process_mp4_data(self):
+        rgb_source = "RGB"
+        
+
 
 
 def parse_arguments():

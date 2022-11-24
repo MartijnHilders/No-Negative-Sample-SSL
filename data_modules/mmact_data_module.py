@@ -7,6 +7,7 @@ from transforms.inertial_transforms import InertialSampler
 from transforms.inertial_augmentations import Jittering
 from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
+from transforms.depth_transforms import DepthSampler, DepthResize
 import multiprocessing as mp
 from time import time
 
@@ -27,6 +28,8 @@ class MMActDataset(MMHarDataset):
             return mmact.MMActInertialInstance(path).signal
         elif modality == "skeleton":
             return mmact.MMActSkeletonInstance(path).joints
+        elif modality == 'rgb':
+            return mmact.MMActRGBInstance(path).video
 
 class MMActDataModule(MMHarDataModule):
     def __init__(self, 
@@ -78,7 +81,8 @@ def try_num_workers():
 if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
-        "skeleton": SkeletonSampler(150)
+        "skeleton": SkeletonSampler(150),
+        "rgb": transforms.Compose([DepthSampler(40), DepthResize(False, 90, 70)])
     }
 
     # try_num_workers()
@@ -94,6 +98,7 @@ if __name__ == '__main__':
         print(b.keys())
         print(b['label'].shape)
         print(b['inertial'].shape)
+        print(b['rgb'].shape)
         print(b['skeleton'].shape)
         break
 
