@@ -53,36 +53,36 @@ class SkeletonCooccurenceBlocks(LightningModule):
         self.conv3_joints = nn.Sequential(
             nn.Conv2d(n_joints, self.out_channels[2], self.kernel_sizes[2]),
             nn.BatchNorm2d(self.out_channels[2]),
-            nn.MaxPool2d(self.max_pool_sizes[2]),
+            nn.MaxPool2d(kernel_size=self.max_pool_sizes[2]),
         )
         self.conv3_motions = nn.Sequential(
             nn.Conv2d(n_joints, self.out_channels[2], self.kernel_sizes[2]),
             nn.BatchNorm2d(self.out_channels[2]),
-            nn.MaxPool2d(self.max_pool_sizes[2]),
+            nn.MaxPool2d(kernel_size=self.max_pool_sizes[2]),
         )
 
         self.conv4_joints = nn.Sequential(
             nn.Conv2d(self.out_channels[2], self.out_channels[3], self.kernel_sizes[3]),
             nn.BatchNorm2d(self.out_channels[3]),
-            nn.MaxPool2d(self.max_pool_sizes[3]),
+            nn.MaxPool2d(kernel_size=self.max_pool_sizes[3]),
         )
         self.conv4_motions = nn.Sequential(
             nn.Conv2d(self.out_channels[2], self.out_channels[3], self.kernel_sizes[3]),
             nn.BatchNorm2d(self.out_channels[3]),
-            nn.MaxPool2d(self.max_pool_sizes[3]),
+            nn.MaxPool2d(kernel_size=self.max_pool_sizes[3]),
         )
 
         self.conv5 = nn.Sequential(
             nn.Conv2d(self.out_channels[3], self.out_channels[4], self.kernel_sizes[4]),
             nn.BatchNorm2d(self.out_channels[4]),
             nn.ReLU(),
-            nn.MaxPool2d(self.max_pool_sizes[4]),
+            nn.MaxPool2d(kernel_size=self.max_pool_sizes[4]),
         )
         self.conv6 = nn.Sequential(
             nn.Conv2d(self.out_channels[4], self.out_channels[5], self.kernel_sizes[5]),
             nn.BatchNorm2d(self.out_channels[5]),
             nn.ReLU(),
-            nn.MaxPool2d(self.max_pool_sizes[5]),
+            nn.MaxPool2d(kernel_size=self.max_pool_sizes[5]),
         )
 
         self.output_shape = self.get_output_shape((1, input_channels, sample_length, n_joints))
@@ -95,7 +95,7 @@ class SkeletonCooccurenceBlocks(LightningModule):
         motions[:, :, 1:, :] = joints[:, :, 1:, :] - joints[:, :, :-1, :]
 
         joints = self.conv1_joints(joints)
-        motions = self.conv1_motions(motions)
+        motions = self.conv1_motions(motions) #todo print shapes of joints after and before each convo, apply 3x1 to convo and pooling
 
         joints = self.conv2_joints(joints)
         motions = self.conv2_motions(motions)

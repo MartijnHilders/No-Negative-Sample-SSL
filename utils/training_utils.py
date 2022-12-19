@@ -3,6 +3,7 @@ import importlib
 import itertools
 import os
 import shutil
+import yaml
 from models.cmc import ContrastiveMultiviewCoding
 from models.simclr_um import SimCLRUnimodal
 from torchvision import transforms
@@ -15,6 +16,7 @@ from callbacks.log_confusion_matrix import LogConfusionMatrix
 from data_modules.constants import DATASET_PROPERTIES
 from transforms.augmentation_utils import compose_random_augmentations
 from utils.experiment_utils import load_yaml_to_dict
+
 
 def init_transforms(modality, transforms_cfg, ssl_random_augmentations=False, random_augmentations_dict={}):
     train = []
@@ -59,7 +61,9 @@ def init_model(model_cfg, metric_scheduler='accuracy', ckpt_path=None):
     if ckpt_path is None:
         return class_(*model_cfg['args'], **model_cfg['kwargs'], metric_scheduler=metric_scheduler)
     else:
-        return class_.load_from_checkpoint(ckpt_path, strict=False)
+        model = class_.load_from_checkpoint(ckpt_path, strict=False, model=model_cfg)
+        return model
+
 
 
 def init_ssl_pretrained(model_cfg, ckpt_path):

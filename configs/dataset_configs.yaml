@@ -39,6 +39,9 @@ datasets:
       out_size: 36
       dataset: mmact
       center_joint: 0
+    rgb:
+      in_channels: 3
+      out_size: 36
     main_metric: f1-score
     class_names: ["carrying", "checking_time", "closing", "crouching", "entering", "exiting",
                   "fall", "jumping", "kicking", "loitering", "looking_around", "opening",

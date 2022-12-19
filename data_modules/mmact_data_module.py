@@ -7,7 +7,7 @@ from transforms.inertial_transforms import InertialSampler
 from transforms.inertial_augmentations import Jittering
 from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
-from transforms.depth_transforms import DepthSampler, DepthResize
+from transforms.video_transforms import VideoSampler, VideoResize
 import multiprocessing as mp
 import time
 
@@ -82,12 +82,12 @@ if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(150),
-        "rgb": transforms.Compose([DepthSampler(40), DepthResize(False, 90, 70)])
+        "rgb": transforms.Compose([VideoSampler(40), VideoResize(False, 90, 70), ToTensor()])
     }
 
     # try_num_workers()
 
-    data_module = MMActDataModule(batch_size=8, train_transforms=train_transforms, num_workers=8)
+    data_module = MMActDataModule(batch_size=32, train_transforms=train_transforms, num_workers=6)
     data_module.setup()
 
     dl = data_module.train_dataloader()

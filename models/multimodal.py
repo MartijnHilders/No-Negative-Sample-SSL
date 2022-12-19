@@ -51,8 +51,13 @@ class MultiModalClassifier(LightningModule):
                 nn.BatchNorm1d(hidden[0]),
                 nn.ReLU(inplace=True)
             )
+
             if freeze_encoders:
-                self.models_dict[modality].freeze()
+                try:
+                    self.models_dict[modality].freeze()
+                except:
+                    for param in self.models_dict[modality].parameters():
+                        param.requires_grad = False
 
         self.projections = nn.ModuleDict(self.projections)
         self.flatten = nn.Flatten()

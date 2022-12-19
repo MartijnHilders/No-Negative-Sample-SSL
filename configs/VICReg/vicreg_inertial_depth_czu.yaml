@@ -1,22 +1,25 @@
+# These values will overwrite the ones in the individual model configuration files.
 experiment:
   seed: 28
-  num_epochs: 100
+  num_epochs_ssl: 100
+  num_epochs_fine_tuning: 100
+  batch_size_fine_tuning: 64
+
+ssl:
+  args: []
+  kwargs:
+    sim_coeff: 10
+    std_coeff: 10
+    cov_coeff: 5
+    sample_length: 50
+    batch_size: 128
+    hidden: [256, 128]
+    lr: 0.0001
+    optimizer_name_ssl: "adam"
 
 modalities:
   inertial:
     model:
-      cnn1d:
-        class_name: SupervisedCNN1D
-        from_module: inertial
-        encoder_name: conv_layers
-        args: []
-        kwargs:
-          batch_size: 64
-          lr: 0.001S
-          sample_length: 50
-          out_channels: [32, 64, 128]
-          optimizer_name: "adam"
-          metric_name: "accuracy"
       transformer:
         class_name: SupervisedTransformer
         from_module: inertial
@@ -24,19 +27,16 @@ modalities:
         encoder_name: cnn_transformer
         args: []
         kwargs:
-          batch_size: 64
-          lr: 0.001
           sample_length: 50
+          kernel_size: 5
           out_channels: [32, 64, 128]
           num_head: 2
           num_attn_layers: 2
+          lr: 0.001
           optimizer_name: "adam"
-          metric_name: "accuracy"
     transforms:
       - class_name: InertialSampler
         from_module: inertial_transforms
-        encoder_class_name: SkeletonCooccurenceBlocks
-        encoder_name: blocks
         transform_name: sampling
         in_test: true
         kwargs:
@@ -55,15 +55,15 @@ modalities:
         transform_name: to_float
         from_module: general_transforms
         in_test: true
+
   depth:
     model:
       resnet:
         class_name: ResNet
         from_module: video
-        encoder_name: res_net
         args: [ ]
         kwargs:
-          batch_size: 64
+          batch_size: 32
           lr: 0.001
           sample_length: 31
           resnet_type: 34
@@ -72,7 +72,7 @@ modalities:
       videonet:
         class_name: VideoNet
         from_module: video
-        encoder_name: video_net
+        encoder_class_name: VideoNet
         args: [ ]
         kwargs:
           batch_size: 64
@@ -94,8 +94,8 @@ modalities:
         in_test: true
         kwargs:
           crop: true
-          height: 90 #187 130
-          width: 70 #154 100
+          height: 70 #187 130
+          width: 50 #154 100
       - class_name: ToRGB
         from_module: video_transforms
         transform_name: RGBconvert

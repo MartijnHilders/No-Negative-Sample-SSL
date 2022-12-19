@@ -1,10 +1,16 @@
 import os
 import string
+import time
 
 import numpy as np
 import pandas as pd
 import tqdm
+import sys
 import decord
+import numpy.core.numeric as _nx
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
+
 
 DATA_EXTENSIONS = {'.csv', '.npy', '.mp4'}
 
@@ -51,13 +57,48 @@ class MMActInstance:
 class MMActRGBInstance(MMActInstance):
     def __init__(self, file_):
         super(MMActRGBInstance, self).__init__(file_)
+        self.num_workers = 20
         self.video = self.read_rgb(file_)
+        # self.video = self.read_rgb_parallel(file_, 100)
+
+    # can not be used due to other processes using multiprocessing (Lightning Dataloader)
+    def read_rgb_parallel(self, file, chunk_size):
+        vr = decord.VideoReader(file)
+        # decord.bridge.set_bridge('torch') # directly compatible with torch tensor
+
+        # get chunk indices based on total frames and num_workers we want to use
+        Ntotal = len(vr)
+        Nsections = chunk_size
+        Neach_section, extras = divmod(Ntotal, Nsections)  # get number of equal batches and remainder
+        section_sizes = ([0] + extras * [Neach_section + 1] + (Nsections - extras) * [Neach_section])
+        split_indices = _nx.array(section_sizes, dtype=_nx.intp).cumsum()
+        chunk_list = [[split_indices[i], split_indices[i+1]] for i in range(len(split_indices)-1)]
+
+        print(chunk_list)
+        # create multiprocess to retrieve the data frames
+
+        with ProcessPoolExecutor(max_workers=self.num_workers) as exec:
+            futures = [exec.submit(self.read_chunk, file, chunk[0], chunk[1], chunk[0]) for chunk in chunk_list]
+
+            # future = exec.submit(self.read_chunk, chunk[0], chunk[1], chunk[0])
+
+            [print(futures[i].result()) for i in range(len(futures))]
+
+            exec.shutdown()
+
+        return 0
+
+    def read_chunk(self, file, start, end, flag):
+        vr = decord.VideoReader(file)
+        numpy = vr.get_batch([start, end]).asnumpy()
+
+        return numpy, flag
 
     @staticmethod
     def read_rgb(file):
-        vr = decord.VideoReader(file)
-        decord.bridge.set_bridge('torch') # directly compatible with torch tensor
-        return vr[0]
+        br = decord.VideoReader(file)
+        decord.bridge.set_bridge('torch')  # directly compatible with torch tensor
+        return br[0:len(br)]
 
 class MMActInertialInstance(MMActInstance):
     def __init__(self, file_):
@@ -72,6 +113,7 @@ class MMActSkeletonInstance(MMActInstance):
     def __init__(self, file_):
         super(MMActSkeletonInstance, self).__init__(file_)
         self.joints = self.read_joints_npy()
+
 
     def read_joints_npy(self):
         return np.load(self._file)

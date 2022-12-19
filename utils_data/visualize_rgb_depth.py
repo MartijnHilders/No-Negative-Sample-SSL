@@ -5,7 +5,7 @@ import time
 import os
 import pandas as pd
 
-from transforms.depth_transforms import DepthSampler, DepthResize, ToRGB
+from transforms.video_transforms import DepthSampler, DepthResize, ToRGB
 import scipy.io
 
 from data_modules.constants import DATASET_PROPERTIES

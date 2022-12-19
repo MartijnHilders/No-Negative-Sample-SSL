@@ -3,7 +3,7 @@ import random
 from PIL import Image
 
 
-class DepthSampler:
+class VideoSampler:
     """
     Resamples a video from any size of timesteps to the given size
     """
@@ -41,11 +41,10 @@ class DepthSampler:
 
         return d_frames
 
-# Todo create a cropper for this and inertial. maybe put them together
-# class DepthCropper:
+
 
 # reshape the height and width of the images
-class DepthResize:
+class VideoResize:
 
     def __init__(self, crop, height, width):
         """
@@ -60,6 +59,7 @@ class DepthResize:
 
     def __call__(self, x):
         # check for RGB
+
         if np.ndim(x) > 3:
             x = self.resize_RGB(x)
 

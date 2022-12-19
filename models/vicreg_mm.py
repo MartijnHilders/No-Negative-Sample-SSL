@@ -1,14 +1,13 @@
 import torch
 import torch.nn.functional as F
-from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.core.module import LightningModule
 from torch import nn
 
 from models.mlp import ProjectionMLP
 
 
 import matplotlib.pyplot as plt
-        
-#todo adapt for depth and create config
+
 class MultimodalVicReg(LightningModule):
     """
     Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
@@ -41,6 +40,7 @@ class MultimodalVicReg(LightningModule):
         x = self.projections[modality](x)
         return x
 
+    # todo try to add projector and decoder and see what happens.
     def _compute_vicreg_loss(self, x, y, partition):
         repr_loss = F.mse_loss(x, y)
 

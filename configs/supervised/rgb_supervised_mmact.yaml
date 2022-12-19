@@ -3,7 +3,7 @@ experiment:
   num_epochs: 100
 
 modalities:
-  depth:
+  rgb:
     model:
       resnet:
         class_name: ResNet
@@ -21,7 +21,7 @@ modalities:
         from_module: video
         args: [ ]
         kwargs:
-          batch_size: 32
+          batch_size: 8
           lr: 0.001
           sample_length: 31
           model_type: "res"
@@ -40,12 +40,8 @@ modalities:
         in_test: true
         kwargs:
           crop: true
-          height: 100 #187 130
-          width: 120 #154 100
-      - class_name: ToRGB
-        from_module: video_transforms
-        transform_name: RGBconvert
-        in_test: true
+          height: 50 #187 130
+          width: 35 #154 100
       - class_name: ToTensor
         from_module: general_transforms
         in_test: true

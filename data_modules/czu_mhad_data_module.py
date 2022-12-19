@@ -12,7 +12,7 @@ from transforms.inertial_transforms import InertialSampler
 from transforms.inertial_augmentations import Jittering
 from transforms.skeleton_transforms import SkeletonSampler
 from transforms.general_transforms import ToTensor, ToFloat
-from transforms.depth_transforms import DepthSampler, DepthResize, ToRGB
+from transforms.video_transforms import VideoSampler, VideoResize, ToRGB
 from utils.experiment_utils import load_yaml_to_dict
 import time
 
@@ -74,7 +74,7 @@ def try_num_workers():
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(100),
-        "depth": transforms.Compose([ToRGB(), DepthResize(212, 256), DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE)])
+        "depth": transforms.Compose([ToRGB(), VideoResize(212, 256), VideoSampler(constants.CZU_DEPTH_MAX_SAMPLE)])
     }
 
     print(mp.cpu_count())
@@ -99,7 +99,8 @@ if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(100),
-        "depth": transforms.Compose([DepthSampler(constants.CZU_DEPTH_MAX_SAMPLE), DepthResize(True, 212, 256), ToRGB()])
+        "depth": transforms.Compose([VideoSampler(constants.CZU_DEPTH_MAX_SAMPLE), VideoResize(True, 212, 256),
+                                     ToRGB()])
     }
 
     data_module = CZUDataModule(batch_size=8, train_transforms=train_transforms, num_workers=8)

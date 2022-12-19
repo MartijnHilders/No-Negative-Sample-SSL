@@ -7,6 +7,8 @@ import pandas as pd
 from shutil import unpack_archive, rmtree
 from tqdm import tqdm
 from scipy.signal import resample
+import decord
+import h5py
 
 
 ACTIVITY_DICT = {
@@ -255,13 +257,39 @@ class MmactRaw():
 
         filenames = next(os.walk(os.path.join(self.data_path, rgb_source)), (None, None, []))[2]
         print(filenames)
+        return 0
+
+    # def process_mp4_data(self):
+    #     rgb_source = "RGB"
+    #     tmp_destination = os.path.join(self.data_path, "RGB_np")
+    #     rgb_dir = os.path.join(self.data_path, rgb_source)
+    #     os.makedirs(tmp_destination, exist_ok=True)
+    #
+    #     print("converting mp4 data...")
+    #     filenames = next(os.walk(rgb_dir), (None, None, []))[2]
+    #     for file in tqdm(filenames):
+    #         name = file.split('.')[0]
+    #         file_path = os.path.join(rgb_dir, file)
+    #         file_path_name = os.path.join(rgb_dir, name)
+    #         np_arr = self.convert_mp4(file_path)
+    #
+    #         # create h5py file
+    #         dest = os.path.join(tmp_destination, name)
+    #
+    #         with h5py.File(file_path_name + '.hdf5', 'a') as FOB:
+    #             FOB.create_dataset(name, data=np_arr, compression='gzip', compression_opts=9, dtype='i8')
+    #
+    # @staticmethod
+    # def convert_mp4(file):
+    #     vr = decord.VideoReader(file, width=300, height=300)
+    #     return vr.get_batch(list(np.arange(0, len(vr)))).asnumpy()
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, help='initial data path', required=True)
     parser.add_argument('--destination_path', type=str, help='destination path', required=True)
-    parser.add_argument('--process_mp4', type=bool, help='if only want to convert mp4 files', required=False, default=False)
+    parser.add_argument('--process_mp4', type=bool, help='if only want to convert mp4 files', required=False, default=True)
     return parser.parse_args()
 
 

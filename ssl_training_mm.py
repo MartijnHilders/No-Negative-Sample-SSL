@@ -4,6 +4,7 @@ from pytorch_lightning import Trainer, seed_everything
 from models.cmc import ContrastiveMultiviewCoding
 from models.cmc_cvkm import ContrastiveMultiviewCodingCVKM
 from models.multimodal import MultiModalClassifier
+from models.vicreg_mm import MultimodalVicReg
 from models.similarity_metrics.latent_space_similarity import LatentSpaceSimilarity
 
 from utils.experiment_utils import (dict_to_json, generate_experiment_id,
@@ -23,7 +24,7 @@ def parse_arguments():
     parser.add_argument('--dataset', required=True)
     parser.add_argument('--data_path', required=True)
     parser.add_argument('--protocol', default='cross_subject')
-    parser.add_argument('--framework', default='cmc', choices=["cmc", "cmc-cmkm"])
+    parser.add_argument('--framework', default='cmc', choices=["cmc", "cmc-cmkm", "vicreg"])
     parser.add_argument('--modalities', required=True, nargs='+')
     parser.add_argument('--models', required=True, nargs='+')
     parser.add_argument('--model_save_path', default='./model_weights')
@@ -92,6 +93,8 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
     elif args.framework == 'cmc-cmkm':
         similarity_metrics = init_similarity_metrics(args, modalities, ssl_cfg, dataset_cfg)
         model = ContrastiveMultiviewCodingCVKM(modalities, encoders, similarity_metrics, **ssl_cfg['kwargs'])
+    elif args.framework == 'vicreg':
+        model = MultimodalVicReg(modalities, encoders, **ssl_cfg['kwargs'])
 
     # Setup training callbacks.
     callbacks = setup_callbacks_ssl(
@@ -103,7 +106,7 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37, fast_dev_run = True)
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37)
     trainer.fit(model, datamodule)
 
     return encoders, loggers_list, loggers_dict, experiment_id
@@ -146,7 +149,7 @@ def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, log
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37, fast_dev_run= True)
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37)
 
     trainer.fit(model, datamodule)
     trainer.test(model, datamodule, ckpt_path='best')
