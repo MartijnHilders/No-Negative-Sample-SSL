@@ -136,7 +136,7 @@ class SupervisedSkeletonCooccurenceModel(LightningModule):
             kernel_sizes   = [[1, 1], [3, 1], [3, 3], [3, 3], [3, 3], [3, 3]],
             max_pool_sizes = [None, None, 2, 2, 2, 2],
             # MLP params
-            output_size       = 27,
+            out_size       = 27,
             # Training/dataset related params
             sample_length    = 50,
             lr               = 1e-3,
@@ -152,7 +152,7 @@ class SupervisedSkeletonCooccurenceModel(LightningModule):
                                                 max_pool_sizes=max_pool_sizes, sample_length=sample_length)
         blocks_output_shape = self.blocks.output_shape
         self.encoder_out_size = reduce(lambda x, y: x * y, blocks_output_shape)
-        self.classifier = nn.Linear(self.encoder_out_size, output_size)
+        self.classifier = nn.Linear(self.encoder_out_size, out_size)
 
         # Loss function.
         self.loss = nn.CrossEntropyLoss()
