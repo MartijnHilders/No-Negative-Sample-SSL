@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
+from utils import order_preserving_torch
 
 from models.mlp import ProjectionMLP
 
@@ -67,6 +68,7 @@ class MultimodalVicReg(LightningModule):
         self.log(f"std_{partition}_loss", std_loss)
         self.log(f"cov_{partition}_loss", cov_loss)
         self.log(f"ssl_{partition}_loss", loss)
+
         return loss
 
     def forward(self, x):
@@ -104,6 +106,8 @@ class MultimodalVicReg(LightningModule):
                     "monitor": 'ssl_val_loss'
                 }
             }
+
+
 
 
 def off_diagonal(x):

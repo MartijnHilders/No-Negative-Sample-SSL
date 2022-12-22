@@ -1,5 +1,5 @@
 import numpy as np
-
+import torch
 
 
 def main():
@@ -10,6 +10,10 @@ def main():
         [[1, 2], [3, 4], [3, 4], [5, 6], [1, 2], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
          [3, 4], [5, 6]])
+
+    # x = torch.from_numpy(x)
+    # y = torch.from_numpy(y)
+
 
     distance, t_scheme = opw(x, y, verbose=0)
     print(f'distance: {distance}')
