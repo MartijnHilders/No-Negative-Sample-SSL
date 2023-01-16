@@ -136,12 +136,12 @@ class SupervisedCNN1D(LightningModule):
     def forward(self, x):
         x = self.conv_layers(x)
         x = nn.Flatten()(x)
-        return self.classifier(x)
+        return self.classifier(x), self.lr
 
     def training_step(self, batch, batch_idx):
         x = batch['inertial']
         y = batch['label'] - 1
-        out = self(x)
+        out, k = self(x)
         loss = nn.CrossEntropyLoss()(out, y)
         self.log("train_loss", loss)
         return loss

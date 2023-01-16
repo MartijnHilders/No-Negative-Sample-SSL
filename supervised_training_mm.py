@@ -100,13 +100,14 @@ def train_test_supervised_mm_model(args, cfg, dataset_cfg, freeze_encoders=False
         class_names           = dataset_cfg["class_names"],
         num_classes           = len(dataset_cfg["class_names"]),
         no_ckpt               = args.no_ckpt,
-        model_weights_path    = args.model_save_path, 
-        metric                = 'val_' + dataset_cfg['main_metric'], 
-        dataset               = args.dataset, 
-        model                 = 'mm_' + '_'.join(args.models), 
-        experiment_id         = experiment_id
+        model_weights_path    = args.model_save_path,
+        metric                = 'val_' + dataset_cfg['main_metric'],
+        dataset               = args.dataset,
+        model                 = 'mm_' + '_'.join(args.models),
+        experiment_id         = experiment_id,
+        framework             = args.framework
     )
-    
+
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
         val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing =not args.no_ckpt, log_every_n_steps = 15)
 

@@ -13,6 +13,7 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from callbacks.log_classifier_metrics import LogClassifierMetrics
 from callbacks.log_confusion_matrix import LogConfusionMatrix
+from callbacks.log_transportation_plan import TransHeatmap
 from data_modules.constants import DATASET_PROPERTIES
 from transforms.augmentation_utils import compose_random_augmentations
 from utils.experiment_utils import load_yaml_to_dict
@@ -123,6 +124,10 @@ def setup_confusion_matrix_logger(class_names):
     return LogConfusionMatrix(class_names)
 
 
+def setup_heatmap_logger(class_names):
+    return TransHeatmap(class_names)
+
+
 def setup_classifier_metrics_logger(num_classes, metric_names=['accuracy', 'f1-score', 'precision', 'recall'], average='macro'):
     return LogClassifierMetrics(num_classes, metric_names, average=average)
 
@@ -145,13 +150,18 @@ def setup_model_checkpoint_callback_last(model_weights_path, dataset, model, exp
     )	
 
 
-def setup_callbacks(early_stopping_metric, early_stopping_mode, class_names, num_classes, no_ckpt, model_weights_path, metric, dataset, model, experiment_id):
+def setup_callbacks(early_stopping_metric, early_stopping_mode, class_names, num_classes, no_ckpt, model_weights_path, metric, dataset, model, experiment_id, framework):
     callbacks = []
     callbacks.append(setup_early_stopping_callback(early_stopping_metric, mode=early_stopping_mode))
     callbacks.append(setup_confusion_matrix_logger(class_names))
     callbacks.append(setup_classifier_metrics_logger(num_classes))
+
+    if framework == "vicreg-order":
+        callbacks.append(setup_heatmap_logger(class_names))
+
     if not no_ckpt:
         callbacks.append(setup_model_checkpoint_callback(model_weights_path, metric, dataset, model, experiment_id))
+
     return callbacks
 
 

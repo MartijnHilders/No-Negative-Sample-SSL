@@ -65,7 +65,8 @@ def train_test_supervised_model(args, cfg, dataset_cfg, freeze_encoder=False, ap
         metric                = 'val_' + dataset_cfg['main_metric'],
         dataset               = args.dataset,
         model                 = args.model,
-        experiment_id         = experiment_id
+        experiment_id         = experiment_id,
+        framework             = None
     )
     # setup loggers: tensorboards and/or wandb
     loggers_list, loggers_dict = setup_loggers(tb_dir="tb_logs", experiment_info=experiment_info, modality=modality, dataset=args.dataset,

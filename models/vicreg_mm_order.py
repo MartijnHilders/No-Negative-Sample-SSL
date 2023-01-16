@@ -1,14 +1,10 @@
 import torch
-import torch.nn.functional as F
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
-
 from models.mlp import ProjectionMLP
+from models.loss import WassOrderDistance, VICRegLoss
 
-
-import matplotlib.pyplot as plt
-
-class MultimodalVicReg(LightningModule):
+class MultimodalVicRegOrder(LightningModule):
     """
     Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
     """
@@ -37,59 +33,63 @@ class MultimodalVicReg(LightningModule):
         x = inputs[modality]
         x = self.encoders[modality](x)
         x = nn.Flatten()(x)
-        x = self.projections[modality](x)
-        return x
 
-    # todo try to add projector and decoder and see what happens.
-    def _compute_vicreg_loss(self, x, y, partition):
-        repr_loss = F.mse_loss(x, y)
+        x_local = x.T
+        x_global = self.projections[modality](x)
+        return x_local, x_global
 
-        x = x - x.mean(dim=0)
-        y = y - y.mean(dim=0)
+    def forward(self, x):
+        outs_local = {}
+        outs_global = {}
+        for m in self.modalities:
+            outs_local[m], outs_global[m] = self._forward_one_modality(m, x)
 
-        std_x = torch.sqrt(x.var(dim=0) + 0.0001)
-        std_y = torch.sqrt(y.var(dim=0) + 0.0001)
-        std_loss = torch.mean(F.relu(1 - std_x)) / 2 + torch.mean(F.relu(1 - std_y)) / 2
+        return outs_local, outs_global
 
-        cov_x = (x.T @ x) / (self.ssl_batch_size - 1)
-        cov_y = (y.T @ y) / (self.ssl_batch_size - 1)
-        cov_loss = off_diagonal(cov_x).pow_(2).sum().div(
-            self.embedding_size
-        ) + off_diagonal(cov_y).pow_(2).sum().div(self.embedding_size)
+    def _compute_loss(self, x, y, partition):
+        x_local, y_local = x[0], y[0]
+        x_global, y_global = x[1], y[1]
 
-        loss = (
-            self.sim_coeff * repr_loss
-            + self.std_coeff * std_loss
-            + self.cov_coeff * cov_loss
-        )
+        # initiate all the loss modules
+        vicreg_loss = VICRegLoss.VICRegLoss(ssl_batch_size=self.ssl_batch_size, embedding_size=self.embedding_size,
+                                     sim_coeff=self.sim_coeff, std_coeff=self.std_coeff, cov_coeff=self.cov_coeff)
 
+        order_loss = WassOrderDistance.WassOrderDistance()
+
+        #calculate losses
+        repr_loss, std_loss, cov_loss, vic_loss = vicreg_loss(x_global, y_global)
+        order_loss, transport = order_loss(x_local, y_local)  # todo can adjust params but enable this when we sweep also add this to model init
+
+        #todo delete naïve method to save heatmaps locally.
+        
+
+
+        loss = order_loss + vic_loss
         self.log(f"repr_{partition}_loss", repr_loss)
         self.log(f"std_{partition}_loss", std_loss)
         self.log(f"cov_{partition}_loss", cov_loss)
+        self.log(f"vic_{partition}_loss", vic_loss)
+        self.log(f"order_{partition}_loss", order_loss)
         self.log(f"ssl_{partition}_loss", loss)
 
         return loss
 
-    def forward(self, x):
-        outs = {}
-        for m in self.modalities:
-            outs[m] = self._forward_one_modality(m, x)
-        return outs
-
     def training_step(self, batch, batch_idx):
         for m in self.modalities:
             batch[m] = batch[m].float()
-        outs = self(batch)
-        x, y = outs[self.modalities[0]], outs[self.modalities[1]]
-        loss  = self._compute_vicreg_loss(x, y, 'train')
+        outs_local, outs_global = self(batch)
+        x = [outs_local[self.modalities[0]], outs_global[self.modalities[0]]]
+        y = [outs_local[self.modalities[1]], outs_global[self.modalities[1]]]
+        loss = self._compute_loss(x, y, 'train')
         return loss
 
     def validation_step(self, batch, batch_idx):
         for m in self.modalities:
             batch[m] = batch[m].float()
-        outs = self(batch)
-        x, y = outs[self.modalities[0]], outs[self.modalities[1]]
-        loss = self._compute_vicreg_loss(x, y, 'val')
+        outs_local, outs_global = self(batch)
+        x = [outs_local[self.modalities[0]], outs_global[self.modalities[0]]]
+        y = [outs_local[self.modalities[1]], outs_global[self.modalities[1]]]
+        loss = self._compute_loss(x, y, 'val')
 
     def configure_optimizers(self):
         return self._initialize_optimizer()
@@ -105,11 +105,3 @@ class MultimodalVicReg(LightningModule):
                     "monitor": 'ssl_val_loss'
                 }
             }
-
-
-
-
-def off_diagonal(x):
-    n, m = x.shape
-    assert n == m
-    return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()

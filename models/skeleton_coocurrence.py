@@ -154,7 +154,7 @@ class SupervisedSkeletonCooccurenceModel(LightningModule):
         self.encoder_out_size = reduce(lambda x, y: x * y, blocks_output_shape)
         self.classifier = nn.Linear(self.encoder_out_size, out_size)
 
-        # Loss function.
+        # loss function.
         self.loss = nn.CrossEntropyLoss()
         
         # Validation/test metrics.

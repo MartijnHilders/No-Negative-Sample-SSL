@@ -128,8 +128,9 @@ def fine_tuning(args, modality, cfg, dataset_cfg, encoder, loggers_list, loggers
         model_weights_path    = args.model_save_path, 
         metric                = 'val_' + dataset_cfg['main_metric'], 
         dataset               = args.dataset, 
-        model                 = 'ssl_finetuned_' + args.framework + '_' + args.model, 
-        experiment_id         = experiment_id
+        model                 = 'ssl_finetuned_' + args.framework + '_' + args.model,
+        experiment_id         = experiment_id,
+        framework             = args.framework
     )
 
     train_transforms, test_transforms = init_transforms(modality, cfg['modalities'][modality]['transforms'])

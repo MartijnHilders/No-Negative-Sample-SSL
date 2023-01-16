@@ -5,6 +5,7 @@ from models.cmc import ContrastiveMultiviewCoding
 from models.cmc_cvkm import ContrastiveMultiviewCodingCVKM
 from models.multimodal import MultiModalClassifier
 from models.vicreg_mm import MultimodalVicReg
+from models.vicreg_mm_order import MultimodalVicRegOrder
 from models.similarity_metrics.latent_space_similarity import LatentSpaceSimilarity
 
 from utils.experiment_utils import (dict_to_json, generate_experiment_id,
@@ -24,7 +25,7 @@ def parse_arguments():
     parser.add_argument('--dataset', required=True)
     parser.add_argument('--data_path', required=True)
     parser.add_argument('--protocol', default='cross_subject')
-    parser.add_argument('--framework', default='cmc', choices=["cmc", "cmc-cmkm", "vicreg"])
+    parser.add_argument('--framework', default='cmc', choices=["cmc", "cmc-cmkm", "vicreg", "vicreg-order"])
     parser.add_argument('--modalities', required=True, nargs='+')
     parser.add_argument('--models', required=True, nargs='+')
     parser.add_argument('--model_save_path', default='./model_weights')
@@ -95,6 +96,8 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
         model = ContrastiveMultiviewCodingCVKM(modalities, encoders, similarity_metrics, **ssl_cfg['kwargs'])
     elif args.framework == 'vicreg':
         model = MultimodalVicReg(modalities, encoders, **ssl_cfg['kwargs'])
+    elif args.framework == 'vicreg-order':
+        model = MultimodalVicRegOrder(modalities, encoders, **ssl_cfg['kwargs'])
 
     # Setup training callbacks.
     callbacks = setup_callbacks_ssl(
@@ -145,7 +148,8 @@ def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, log
         metric                = 'val_' + dataset_cfg['main_metric'], 
         dataset               = args.dataset, 
         model                 = 'mm_ssl_finetuned_' + args.framework + '_' + "_".join(args.models), 
-        experiment_id         = experiment_id
+        experiment_id         = experiment_id,
+        frame_work            = args.framework
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
