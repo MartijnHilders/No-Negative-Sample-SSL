@@ -1,24 +1,35 @@
+import random
+
 import torch
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
-from models.mlp import ProjectionMLP
-from models.loss import WassOrderDistance, VICRegLoss
+from models.mlp import ProjectionMLP, LocalProjectionMLP
+from models.loss import WassOrderDistance, VICRegLoss, WassOrderDistance_batch
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class MultimodalVicRegOrder(LightningModule):
     """
     Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
     """
-    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, **kwargs):
+    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff=1,
+                 beta_coeff=1, **kwargs):
         super().__init__()
         self.save_hyperparameters('modalities', 'hidden', 'batch_size', 'sim_coeff', 'std_coeff', 'cov_coeff', 'optimizer_name_ssl', 'lr')
         
         self.modalities = modalities
         self.encoders = nn.ModuleDict(encoders)
 
-        self.projections = {}
+        # create local and global projections
+        self.local_projections = {}
+        self.global_projections = {}
+
         for m in modalities:
-            self.projections[m] = ProjectionMLP(in_size=encoders[m].out_size, hidden=hidden)
-        self.projections = nn.ModuleDict(self.projections)
+            local_projection_size = self.get_local_projection_size(encoders[m].out_sample)
+            self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
+            self.global_projections[m] = ProjectionMLP(in_size=encoders[m].out_size, hidden=hidden)
+        self.local_projections = nn.ModuleDict(self.local_projections)
+        self.global_projections = nn.ModuleDict(self.global_projections)
 
         self.optimizer_name_ssl = optimizer_name_ssl
         self.lr = lr
@@ -28,15 +39,23 @@ class MultimodalVicRegOrder(LightningModule):
         self.sim_coeff = sim_coeff
         self.std_coeff = std_coeff
         self.cov_coeff = cov_coeff
+        self.alpha_coeff = alpha_coeff
+        self.beta_coeff = beta_coeff
 
     def _forward_one_modality(self, modality, inputs):
         x = inputs[modality]
         x = self.encoders[modality](x)
-        x = nn.Flatten()(x)
 
-        x_local = x.T
-        x_global = self.projections[modality](x)
+        # local feature projection
+        x_local = x.squeeze().permute(0, 2, 1)
+        x_local = self.local_projections[modality](x_local)
+
+        # global feature projection
+        x_global = nn.Flatten()(x)
+        x_global = self.global_projections[modality](x_global)
+
         return x_local, x_global
+
 
     def forward(self, x):
         outs_local = {}
@@ -54,17 +73,28 @@ class MultimodalVicRegOrder(LightningModule):
         vicreg_loss = VICRegLoss.VICRegLoss(ssl_batch_size=self.ssl_batch_size, embedding_size=self.embedding_size,
                                      sim_coeff=self.sim_coeff, std_coeff=self.std_coeff, cov_coeff=self.cov_coeff)
 
-        order_loss = WassOrderDistance.WassOrderDistance()
+        # todo: change again when we finish implementing batch loss.
+        # order_loss = WassOrderDistance.WassOrderDistance()
+        order_loss = WassOrderDistance_batch.WassOrderDistance()
 
         #calculate losses
         repr_loss, std_loss, cov_loss, vic_loss = vicreg_loss(x_global, y_global)
-        order_loss, transport = order_loss(x_local, y_local)  # todo can adjust params but enable this when we sweep also add this to model init
+        order_loss, transport = order_loss(x_local, y_local)
+        order_loss = torch.mean(order_loss) #todo check what to do with the batches distances.
 
-        #todo delete naïve method to save heatmaps locally.
-        
+        #todo delete naïve method to save heatmaps locally. + find out how to only do it or certain epochs.
+        #maybe add random thing to only save every 2% of the time.
+        # if random.random() < 0.01:
+        #     idx = random.random(0, transport.shape[0])
+        #     transport_plot = transport[idx].cpu().detach().numpy()
+        #     s = sns.heatmap(transport_plot)
+        #     s.set(ylabel="Inertial Features", xlabel="Skeleton Features")
+        #     plt.show()
 
 
-        loss = order_loss + vic_loss
+        loss = self.alpha_coeff * order_loss + self.beta_coeff * vic_loss
+
+
         self.log(f"repr_{partition}_loss", repr_loss)
         self.log(f"std_{partition}_loss", std_loss)
         self.log(f"cov_{partition}_loss", cov_loss)
@@ -105,3 +135,9 @@ class MultimodalVicRegOrder(LightningModule):
                     "monitor": 'ssl_val_loss'
                 }
             }
+
+    @staticmethod
+    def get_local_projection_size(input):
+        sample = input
+        out = torch.squeeze(sample).permute(0, 2, 1) # need to adjust for different encoder configurations
+        return out.shape[-1]

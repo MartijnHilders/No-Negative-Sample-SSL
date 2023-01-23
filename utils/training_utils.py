@@ -150,15 +150,11 @@ def setup_model_checkpoint_callback_last(model_weights_path, dataset, model, exp
     )	
 
 
-def setup_callbacks(early_stopping_metric, early_stopping_mode, class_names, num_classes, no_ckpt, model_weights_path, metric, dataset, model, experiment_id, framework):
+def setup_callbacks(early_stopping_metric, early_stopping_mode, class_names, num_classes, no_ckpt, model_weights_path, metric, dataset, model, experiment_id):
     callbacks = []
     callbacks.append(setup_early_stopping_callback(early_stopping_metric, mode=early_stopping_mode))
     callbacks.append(setup_confusion_matrix_logger(class_names))
     callbacks.append(setup_classifier_metrics_logger(num_classes))
-
-    if framework == "vicreg-order":
-        callbacks.append(setup_heatmap_logger(class_names))
-
     if not no_ckpt:
         callbacks.append(setup_model_checkpoint_callback(model_weights_path, metric, dataset, model, experiment_id))
 

@@ -127,3 +127,28 @@ class ProjectionMLP(nn.Module):
 		x = self.linear1(x)
 		x = self.linear2(x)
 		return x
+
+
+class LocalProjectionMLP(nn.Module):
+	def __init__(self, in_size, hidden=[128,256], channels=12):
+		super().__init__()
+
+		self.in_size = in_size
+		self.name = 'LocalProjectionMLP'
+		self.relu = nn.ReLU()
+		self.linear1 = nn.Sequential(
+			nn.Linear(self.in_size, hidden[0]),
+			# nn.BatchNorm1d(channels),
+			nn.ReLU(inplace=True)
+		)
+		self.linear2 = nn.Sequential(
+			nn.Linear(hidden[0], hidden[1])
+		)
+
+	def forward(self, x):
+		x = self.linear1(x)
+		x = self.linear2(x)
+		return x
+
+	def set_in_size(self, in_size):
+		self.in_size = in_size

@@ -105,7 +105,6 @@ def train_test_supervised_mm_model(args, cfg, dataset_cfg, freeze_encoders=False
         dataset               = args.dataset,
         model                 = 'mm_' + '_'.join(args.models),
         experiment_id         = experiment_id,
-        framework             = args.framework
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',

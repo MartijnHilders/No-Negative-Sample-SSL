@@ -87,7 +87,7 @@ class SkeletonCooccurenceBlocks(LightningModule):
 
         self.output_shape = self.get_output_shape((1, input_channels, sample_length, n_joints))
         self.out_size = reduce(lambda x, y: x * y, self.output_shape)
-
+        self.out_sample = self.get_output_shape((2, input_channels, sample_length, n_joints), True)
 
     def forward(self, x):
         joints = x
@@ -95,7 +95,7 @@ class SkeletonCooccurenceBlocks(LightningModule):
         motions[:, :, 1:, :] = joints[:, :, 1:, :] - joints[:, :, :-1, :]
 
         joints = self.conv1_joints(joints)
-        motions = self.conv1_motions(motions) #todo print shapes of joints after and before each convo, apply 3x1 to convo and pooling
+        motions = self.conv1_motions(motions)
 
         joints = self.conv2_joints(joints)
         motions = self.conv2_motions(motions)
@@ -114,8 +114,11 @@ class SkeletonCooccurenceBlocks(LightningModule):
         fused = self.conv6(fused)
         return fused
 
-    def get_output_shape(self, input_shape):
+    def get_output_shape(self, input_shape, data = False):
+        if data:
+            return self(torch.rand(*(input_shape))).data
         return self(torch.rand(*(input_shape))).data.shape
+
 
 class SupervisedSkeletonCooccurenceModel(LightningModule):
     """
@@ -150,6 +153,7 @@ class SupervisedSkeletonCooccurenceModel(LightningModule):
         self.blocks = SkeletonCooccurenceBlocks(input_channels=input_channels, n_joints=n_joints,
                                                 out_channels=out_channels, kernel_sizes=kernel_sizes,
                                                 max_pool_sizes=max_pool_sizes, sample_length=sample_length)
+
         blocks_output_shape = self.blocks.output_shape
         self.encoder_out_size = reduce(lambda x, y: x * y, blocks_output_shape)
         self.classifier = nn.Linear(self.encoder_out_size, out_size)

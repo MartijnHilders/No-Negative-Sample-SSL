@@ -20,7 +20,7 @@ class ConvolutionalBlocks(nn.Module):
         self.name = 'conv_layers_1d'
         self.num_layers = len(out_channels)
         self.out_size = self._compute_out_size(out_channels[-1], sample_length, self.num_layers, padding, kernel_size, stride, pool_padding, pool_size=pool_size)
-        
+
         self.conv_block1 = nn.Sequential(
             nn.Conv1d(in_channels=in_channels, out_channels=out_channels[0], kernel_size=kernel_size, stride=stride, padding=padding),
             nn.BatchNorm1d(out_channels[0]),
@@ -97,6 +97,8 @@ class ConvolutionalBlocksTransformer(nn.Module):
         for _ in range(num_layers):
             conv_out_size = int((conv_out_size + 2 * padding - (kernel_size - 1) - 1) / stride + 1)
         return int(num_channels * conv_out_size)
+
+
 
     def forward(self, x):
         x = self.conv_block1(x)
@@ -211,6 +213,8 @@ class CNNTransformer(LightningModule):
         dropout=0.1,
         num_head=2,
         num_attn_layers=2,
+        channels = 12,
+        samples = 50,
 		**kwargs):
 
         super().__init__()
@@ -220,6 +224,8 @@ class CNNTransformer(LightningModule):
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=out_channels[-1], nhead=num_head)
         self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_attn_layers)
         self.out_size = self.conv_layers.out_size
+        self.out_sample = self.get_output_shape((2, channels, samples), True)
+
     
     def forward(self, x):
         x = self.conv_layers(x)
@@ -228,6 +234,11 @@ class CNNTransformer(LightningModule):
         x = self.transformer_encoder(x)
         x = x.permute(1, 2, 0)
         return x
+
+    def get_output_shape(self, input_shape, data=False):
+        if data:
+            return self(torch.rand(*(input_shape))).data
+        return self(torch.rand(*(input_shape))).data.shape
 
 
 class SupervisedTransformer(LightningModule):
@@ -255,10 +266,13 @@ class SupervisedTransformer(LightningModule):
             dropout, num_head, num_attn_layers)
         self.classifier = nn.Linear(self.cnn_transformer.out_size, out_size)
         self.loss = nn.CrossEntropyLoss()
-        self.out_size = out_size
         self.metric_scheduler = metric_scheduler
         self.lr = lr
         self.optimizer_name = optimizer_name
+        self.out_size = out_size
+        self.out_sample = self.cnn_transformer.out_sample
+
+
 
     def forward(self, x):
         x = self.cnn_transformer(x)
@@ -305,3 +319,4 @@ class SupervisedTransformer(LightningModule):
                 "monitor": '_'.join(['val', self.metric_scheduler])
             }
         }
+

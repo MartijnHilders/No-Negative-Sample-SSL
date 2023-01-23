@@ -149,7 +149,6 @@ def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, log
         dataset               = args.dataset, 
         model                 = 'mm_ssl_finetuned_' + args.framework + '_' + "_".join(args.models), 
         experiment_id         = experiment_id,
-        frame_work            = args.framework
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',

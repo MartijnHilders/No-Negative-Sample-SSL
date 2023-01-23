@@ -21,13 +21,12 @@ class ResNet(LightningModule):
         self.res_net.fc = Identity(in_size=in_size)
 
         self.classifier = nn.Linear(in_size, out_size)
-        self.loss = nn.CrossEntropyLoss() #todo check loss function
+        self.loss = nn.CrossEntropyLoss()
         self.metric_scheduler = metric_scheduler
         self.lr = lr
         self.optimizer_name = optimizer_name
         self.out_size = out_size
 
-    # todo memory issues and wrong in batch size, check how to fix (create for loop)!
     def forward(self, x):
         x = torch.reshape(x, (-1, x.shape[2], x.shape[3], x.shape[4]))  # unpack by reshaping
         x = torch.permute(x, (0, -1, 1, 2)).float()  # put into correct shape for the model.

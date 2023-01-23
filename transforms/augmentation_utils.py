@@ -24,7 +24,6 @@ def compose_random_augmentations(modality, config_dict):
     all_augmentations = {
         "inertial": inertial_augmentations,
         "skeleton": skeleton_augmentations,
-        "depth" : skeleton_augmentations #todo change this
     }
     transforms_list = []
     augmentations_for_modality = all_augmentations[modality]

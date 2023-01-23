@@ -69,7 +69,7 @@ class VideoResize:
         return x
 
     # maybe fixate interpolation mode to NEAREST to also use when upsampling
-    # todo search for a speed up? Check why it adds another frame and remove/resolve
+    # search for a speed up? Check why it adds another frame and remove/resolve
     def resize_RGB(self, x):
         percentage_width = int((x.shape[2] / 100) * 20)
         height_crop = [50, x.shape[1]]

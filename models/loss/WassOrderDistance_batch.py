@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import numpy as np
+import random
 
 
 class WassOrderDistance(nn.Module):
@@ -43,16 +44,20 @@ class WassOrderDistance(nn.Module):
         self.max_iter = max_iter
         self.verbose = verbose
 
+
+    # todo try to change so that it works with 3d -> batch, num_frames,
+    # output -> batch size [batches, 2] where (2 = distance, transport plan)
+    # save batch (keep this version and create new version [1,
     def forward(self, X, Y):
         tolerance = 0.5e-2
 
         # set the p_norm
         p_norm = np.inf
 
-        n = X.shape[0]
-        m = Y.shape[0]
-        dim = X.shape[1]
-        if Y.shape[1] != dim:
+        n = X.shape[1]
+        m = Y.shape[1]
+        dim = X.shape[2]
+        if Y.shape[2] != dim:
             print("\nThe dimensions of instances in the input sequences must be the same!")
             return
 
@@ -70,8 +75,8 @@ class WassOrderDistance(nn.Module):
         s = self.lamda1 / ((i / n - j / m) ** 2 + 1)
 
         # normalize and get the pairwise distances between X and Y (square euclidean)
-        X_norm = (X - X.mean(dim=0)/torch.sqrt(X.var(dim=0) + 0.0001))
-        Y_norm = (Y - Y.mean(dim=0)/torch.sqrt(Y.var(dim=0) + 0.0001))
+        X_norm = (X - X.mean(dim=1, keepdim=True)/torch.sqrt(X.var(dim=1, keepdim=True) + 0.0001))
+        Y_norm = (Y - Y.mean(dim=1, keepdim=True)/torch.sqrt(Y.var(dim=1, keepdim=True) + 0.0001))
         d = pdist2_EucSq(X_norm, Y_norm)
 
         # scale down the distance matrix and calculate k-matrix
@@ -100,13 +105,14 @@ class WassOrderDistance(nn.Module):
         # Sinkhorn Distances : Lightspeed Computation of Optimal Transport,
         # Advances in Neural Information Processing Systems (NIPS) 26, 2013
         while compt < self.max_iter:
-            u = 1/(ainvK @ (b/(k.T @ u)))
+            u = 1/(torch.matmul(ainvK,(b/(torch.matmul(k.mT, u)))))
             compt += 1
-            if compt % 20 == 1 or compt == self.max_iter:
-                v = b/(k.T @ u)
-                u = 1/(ainvK @ v)
 
-                criterion = torch.norm(torch.sum(torch.abs(v * (k.T @ u) - b)), p=p_norm)
+            if compt % 20 == 1 or compt == self.max_iter:
+                v = b/(torch.matmul(k.mT, u))
+                u = 1/(torch.matmul(ainvK, v))
+
+                criterion = torch.norm(torch.sum(torch.abs(v * (torch.matmul(k.mT, u)) - b)), p=p_norm)
                 if criterion < tolerance or torch.isnan(criterion):
                     break
 
@@ -116,8 +122,8 @@ class WassOrderDistance(nn.Module):
 
 
         U = torch.multiply(k, d)
-        dis = torch.sum(u * (U @ v))
-        t = torch.multiply(v.T, torch.multiply(u, k))
+        dis = torch.sum(u * (torch.matmul(U, v)), dim=1, keepdim=True)
+        t = torch.multiply(v.mT, torch.multiply(u, k))
 
         return dis, t
 
@@ -125,13 +131,13 @@ class WassOrderDistance(nn.Module):
 # calculate pairwise distance, with the squared euclidean distance as distance metric.
 # todo reference https://github.com/pdollar/toolbox/blob/master/classify/pdist2.m
 def pdist2_EucSq(x, y):
-    x_square = torch.sum(x * x, dim=1, keepdim=True)
-    y_square = torch.sum(y.T * y.T, dim=0, keepdim=True)
-    d = x_square + y_square - 2 * torch.mm(x, y.T)
+    x_square = torch.sum(x * x, dim=2, keepdim=True)
+    y_square = torch.sum(y.mT * y.mT, dim=1, keepdim=True)
+    d = x_square + y_square - 2 * torch.matmul(x, y.mT)
     return d
 
 
-def test():
+def test_1():
     # two equal arrays, so perfect matching
     x = np.array(
         [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
@@ -143,6 +149,9 @@ def test():
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
          [5, 6], [3, 4]])
 
+    x = np.tile(x, (128, 1, 1))
+    y = np.tile(y, (128, 1, 1))
+
     x = torch.from_numpy(x).float()
     y = torch.from_numpy(y).float()
     x.requires_grad = True
@@ -150,25 +159,43 @@ def test():
 
     order_dist = WassOrderDistance()
     distance, t_scheme = order_dist(x, y)
-    print(f'distance: {distance}')
 
 
-    create_trans_heatmap(t_scheme)
+    for i in range(5):
+
+        idx = random.randint(0, t_scheme.shape[0])
+        print(f'distance: {distance[idx]}')
+        create_trans_heatmap(t_scheme[idx])
 
     # check if backprop works
-    distance.backward()
+    distance[0].backward()
     print(distance)
 
+
+# testing two different batches
 def test_2():
-    x = np.array(
+    x_1 = np.array(
         [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
          [3, 4], [5, 6]])
 
-    y = np.array(
+    y_1 = np.array(
+        [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
+         [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
+         [5, 6], [3, 4]])
+
+    x_2 = np.array(
+        [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
+         [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
+         [3, 4], [5, 6]])
+
+    y_2 = np.array(
         [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [1, 2], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [1, 2], [5, 6], [3, 4], [5, 6], [1, 2],
          [5, 6], [3, 4]])
+
+    x = np.stack([x_1, x_2])
+    y = np.stack([y_1, y_2])
 
     x = torch.from_numpy(x).float()
     y = torch.from_numpy(y).float()
@@ -177,13 +204,15 @@ def test_2():
 
     order_dist = WassOrderDistance()
     distance, t_scheme = order_dist(x, y)
-    print(f'distance: {distance}')
 
-    create_trans_heatmap(t_scheme)
+    for i in range(2):
+        print(f'distance: {distance[i]}')
+        create_trans_heatmap(t_scheme[i])
 
     # check if backprop works
-    distance.backward()
+    distance[0].backward()
     print(distance)
+
 
 
 def create_trans_heatmap(trans):
