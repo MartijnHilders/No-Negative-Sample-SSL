@@ -14,7 +14,7 @@ ssl:
     sample_length: 50
     batch_size: 128
     hidden: [256, 128]
-    lr: 0.0001
+    lr: 0.00005
     optimizer_name_ssl: "adam"
 
 modalities:

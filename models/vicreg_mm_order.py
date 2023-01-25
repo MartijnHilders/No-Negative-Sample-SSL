@@ -1,5 +1,5 @@
 import random
-
+import torch.nn.functional as F
 import torch
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
@@ -12,7 +12,7 @@ class MultimodalVicRegOrder(LightningModule):
     """
     Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
     """
-    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff=1,
+    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff=100,
                  beta_coeff=1, **kwargs):
         super().__init__()
         self.save_hyperparameters('modalities', 'hidden', 'batch_size', 'sim_coeff', 'std_coeff', 'cov_coeff', 'optimizer_name_ssl', 'lr')
@@ -85,15 +85,34 @@ class MultimodalVicRegOrder(LightningModule):
         mean_embedding_x = torch.mean(x_local)
         mean_embedding_y = torch.mean(y_local)
 
+
         #todo delete naïve method to save heatmaps locally. + find out how to only do it or certain epochs.
         #maybe add random thing to only save every 2% of the time.
         if random.random() < 0.005:
-            idx = random.randint(0, transport.shape[0]-1)
-            transport_plot = transport[idx].cpu().detach().numpy()
-            s = sns.heatmap(transport_plot)
-            s.set(ylabel="Inertial Features", xlabel="Skeleton Features")
-            plt.show()
 
+
+            x_local_norm =  (x_local - x_local.mean(dim=1, keepdim=True)/torch.sqrt(x_local.var(dim=1, keepdim=True) + 0.0001))
+            y_local_norm = (y_local - y_local.mean(dim=1, keepdim=True)/torch.sqrt(y_local.var(dim=1, keepdim=True) + 0.0001))
+
+            # x_local_norm_2 = (x_local_norm - x_local_norm.mean(dim=2, keepdim=True)/torch.sqrt(x_local_norm.var(dim=2, keepdim=True) + 0.0001))
+            # y_local_norm_2 = (y_local_norm - y_local_norm.mean(dim=2, keepdim=True)/torch.sqrt(y_local.var(dim=2, keepdim=True) + 0.0001))
+            print(torch.max(order_loss))
+
+
+
+            for i in range(3):
+                idx = random.randint(0, transport.shape[0]-1)
+                cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
+                transport_plot = transport[idx].cpu().detach().numpy()
+                s = sns.heatmap(transport_plot)
+                s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
+                plt.show()
+
+
+                cdist = cdist_local.cpu().detach().numpy()
+                s2 = sns.heatmap(cdist)
+                s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
+                plt.show()
 
         loss = self.alpha_coeff * order_loss + self.beta_coeff * vic_loss
 
@@ -148,3 +167,10 @@ class MultimodalVicRegOrder(LightningModule):
         sample = input
         out = torch.squeeze(sample).permute(0, 2, 1) # need to adjust for different encoder configurations
         return out.shape[-1]
+
+    @staticmethod
+    def get_cosine_sim_matrix(features_1, features_2):
+        features_1 = F.normalize(features_1, dim=1)
+        features_2 = F.normalize(features_2, dim=1)
+        similarity_matrix = torch.matmul(features_1, features_2.T)
+        return similarity_matrix

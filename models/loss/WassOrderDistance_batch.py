@@ -36,7 +36,7 @@ class WassOrderDistance(nn.Module):
         The code can be used for research purposes only.
         """
 
-    def __init__(self, lamda1=0, lamda2=0.05, delta=10, max_iter=20, verbose=0):
+    def __init__(self, lamda1=0.1, lamda2=0.01, delta=10, max_iter=200, verbose=0):
         super(WassOrderDistance, self).__init__()
         self.lamda1 = lamda1
         self.lamda2 = lamda2
@@ -75,13 +75,16 @@ class WassOrderDistance(nn.Module):
         s = self.lamda1 / ((i / n - j / m) ** 2 + 1)
 
         # normalize and get the pairwise distances between X and Y (square euclidean)
-        X_norm = (X - X.mean(dim=1, keepdim=True)/torch.sqrt(X.var(dim=1, keepdim=True) + 0.0001))
-        Y_norm = (Y - Y.mean(dim=1, keepdim=True)/torch.sqrt(Y.var(dim=1, keepdim=True) + 0.0001))
+        X_norm = (X - X.mean(dim=1, keepdim=True) / torch.sqrt(X.var(dim=1, keepdim=True) + 0.0001))
+        Y_norm = (Y - Y.mean(dim=1, keepdim=True) / torch.sqrt(Y.var(dim=1, keepdim=True) + 0.0001))
+
         d = pdist2_EucSq(X_norm, Y_norm)
 
         # scale down the distance matrix by max of every batch and calculate k-matrix
         d = d / d.flatten(start_dim=-2).max(dim=1)[0].view(-1, 1, 1)# first flatten to easily capture max of whole matrix
         k = p * torch.exp((s - d)/self.lamda2)
+
+        # k[k<torch.exp(-100)] = torch.exp(torch.tensor(-100))
 
         # With some parameters, some entries of K may exceed the maching-precision
         # limit; in such cases, you may need to adjust the parameters, and/or
@@ -177,22 +180,22 @@ def test_2():
     x_1 = np.array(
         [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
-         [3, 4], [5, 6], [1, 2], [1,2]])
+         [3, 4], [5, 6], [1, 2], [1,2], [1,2]])
 
     y_1 = np.array(
         [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
-         [5, 6], [3, 4], [1, 2], [1,2]])
+         [3, 4], [5, 6], [1, 2], [1, 2],[1,2]])
 
     x_2 = np.array(
-        [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
+        [[1, 2], [3, 4], [5, 6], [4, 3], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
-         [3, 4], [5, 6], [1, 2], [88, 9]])
+         [3, 4], [5, 6], [1, 2], [8,99]])
 
     y_2 = np.array(
-        [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [1, 2], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
-         [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [1, 2], [5, 6], [3, 4], [5, 6], [1, 2],
-         [5, 6], [3, 4], [88, 29080989], [8283, 83]])
+        [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
+         [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
+         [3, 4], [5, 6], [1, 2], [4, 3], [8,99]])
 
 
     x = np.stack([x_1, x_2])
