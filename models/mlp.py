@@ -130,7 +130,7 @@ class ProjectionMLP(nn.Module):
 
 
 class LocalProjectionMLP(nn.Module):
-	def __init__(self, in_size, hidden=[128,256], channels=12):
+	def __init__(self, in_size, hidden=[128,256], channels=50):
 		super().__init__()
 
 		self.in_size = in_size

@@ -82,14 +82,17 @@ class MultimodalVicRegOrder(LightningModule):
         order_loss, transport = order_loss(x_local, y_local)
         order_loss = torch.mean(order_loss) #todo check what to do with the batches distances.
 
+        mean_embedding_x = torch.mean(x_local)
+        mean_embedding_y = torch.mean(y_local)
+
         #todo delete naïve method to save heatmaps locally. + find out how to only do it or certain epochs.
         #maybe add random thing to only save every 2% of the time.
-        # if random.random() < 0.01:
-        #     idx = random.random(0, transport.shape[0])
-        #     transport_plot = transport[idx].cpu().detach().numpy()
-        #     s = sns.heatmap(transport_plot)
-        #     s.set(ylabel="Inertial Features", xlabel="Skeleton Features")
-        #     plt.show()
+        if random.random() < 0.005:
+            idx = random.randint(0, transport.shape[0]-1)
+            transport_plot = transport[idx].cpu().detach().numpy()
+            s = sns.heatmap(transport_plot)
+            s.set(ylabel="Inertial Features", xlabel="Skeleton Features")
+            plt.show()
 
 
         loss = self.alpha_coeff * order_loss + self.beta_coeff * vic_loss
@@ -98,9 +101,13 @@ class MultimodalVicRegOrder(LightningModule):
         self.log(f"repr_{partition}_loss", repr_loss)
         self.log(f"std_{partition}_loss", std_loss)
         self.log(f"cov_{partition}_loss", cov_loss)
-        self.log(f"vic_{partition}_loss", vic_loss)
-        self.log(f"order_{partition}_loss", order_loss)
+        self.log(f"vic_{partition}_loss", self.beta_coeff * vic_loss)
+        self.log(f"order_{partition}_loss", self.alpha_coeff * order_loss)
         self.log(f"ssl_{partition}_loss", loss)
+
+        # todo delete
+        self.log(f"mean_{partition}_x_embedding", mean_embedding_x)
+        self.log(f"mean_{partition}_y_embedding", mean_embedding_y)
 
         return loss
 
