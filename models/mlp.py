@@ -152,3 +152,28 @@ class LocalProjectionMLP(nn.Module):
 
 	def set_in_size(self, in_size):
 		self.in_size = in_size
+
+class LocalProjectionMLP_Volta(nn.Module):
+	def __init__(self, in_size, hidden=[128, 256], channels=50):
+		super().__init__()
+
+		self.in_size = in_size
+		self.name = 'LocalProjectionMLP_volta'
+		self.relu = nn.ReLU()
+		self.inter_g_1_text = nn.Linear(self.in_size, hidden[0], bias=False)
+		self.inter_g_2_text = nn.BatchNorm1d(hidden[0])
+		self.inter_g_3_text = nn.Sequential(
+			nn.ReLU(inplace=True),
+			nn.Linear(hidden[0], hidden[0], bias=True)
+		)  ## The hard-coded dimensions need to be tuned
+
+		self.inter_g_4_text = nn.BatchNorm1d(hidden[0])
+		self.inter_g_5_text = nn.Sequential(
+			nn.ReLU(inplace=True),
+			nn.Linear(hidden[0], hidden[1], bias=True)
+		)  ## The hard-coded dimensions need to be tuned
+
+	def forward(self, x):
+		x = self.inter_g_3_text(self.inter_g_2_text(self.inter_g_1_text(x).permute(0,2,1)).permute(0,2,1))
+		x = self.inter_g_5_text(self.inter_g_4_text(x.permute(0,2,1)).permute(0,2,1))
+		return x

@@ -3,8 +3,8 @@ import torch.nn.functional as F
 import torch
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
-from models.mlp import ProjectionMLP, LocalProjectionMLP
-from models.loss import WassOrderDistance, VICRegLoss, WassOrderDistance_batch
+from models.mlp import ProjectionMLP, LocalProjectionMLP, LocalProjectionMLP_Volta
+from models.loss import WassOrderDistance, VICRegLoss, WassOrderDistance_batch, WassOrderDistance_lazy, WassOrderDistance_Gromov
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -12,7 +12,7 @@ class MultimodalVicRegOrder(LightningModule):
     """
     Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
     """
-    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff=100,
+    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff= 10,
                  beta_coeff=1, **kwargs):
         super().__init__()
         self.save_hyperparameters('modalities', 'hidden', 'batch_size', 'sim_coeff', 'std_coeff', 'cov_coeff', 'optimizer_name_ssl', 'lr')
@@ -26,7 +26,8 @@ class MultimodalVicRegOrder(LightningModule):
 
         for m in modalities:
             local_projection_size = self.get_local_projection_size(encoders[m].out_sample)
-            self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
+            # self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
+            self.local_projections[m] = LocalProjectionMLP_Volta(in_size=local_projection_size, hidden=hidden)
             self.global_projections[m] = ProjectionMLP(in_size=encoders[m].out_size, hidden=hidden)
         self.local_projections = nn.ModuleDict(self.local_projections)
         self.global_projections = nn.ModuleDict(self.global_projections)
@@ -75,11 +76,14 @@ class MultimodalVicRegOrder(LightningModule):
 
         # todo: change again when we finish implementing batch loss.
         # order_loss = WassOrderDistance.WassOrderDistance()
-        order_loss = WassOrderDistance_batch.WassOrderDistance()
+        # order_loss = WassOrderDistance_batch.WassOrderDistance()
+        # order_loss = WassOrderDistance_lazy.SinkhornDistance()
+        order_loss = WassOrderDistance_Gromov.WassOrderDistanceGromov()
 
         #calculate losses
         repr_loss, std_loss, cov_loss, vic_loss = vicreg_loss(x_global, y_global)
-        order_loss, transport = order_loss(x_local, y_local)
+        # order_loss, transport = order_loss(x_local, y_local)
+        order_loss = order_loss(x_local, y_local)
         order_loss = torch.mean(order_loss) #todo check what to do with the batches distances.
 
         mean_embedding_x = torch.mean(x_local)
@@ -94,19 +98,15 @@ class MultimodalVicRegOrder(LightningModule):
             x_local_norm =  (x_local - x_local.mean(dim=1, keepdim=True)/torch.sqrt(x_local.var(dim=1, keepdim=True) + 0.0001))
             y_local_norm = (y_local - y_local.mean(dim=1, keepdim=True)/torch.sqrt(y_local.var(dim=1, keepdim=True) + 0.0001))
 
-            # x_local_norm_2 = (x_local_norm - x_local_norm.mean(dim=2, keepdim=True)/torch.sqrt(x_local_norm.var(dim=2, keepdim=True) + 0.0001))
-            # y_local_norm_2 = (y_local_norm - y_local_norm.mean(dim=2, keepdim=True)/torch.sqrt(y_local.var(dim=2, keepdim=True) + 0.0001))
-            print(torch.max(order_loss))
-
-
 
             for i in range(3):
-                idx = random.randint(0, transport.shape[0]-1)
-                cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
-                transport_plot = transport[idx].cpu().detach().numpy()
-                s = sns.heatmap(transport_plot)
-                s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
-                plt.show()
+                idx = random.randint(0, x_local.shape[0]-1)
+                # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
+                cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
+                # transport_plot = transport[idx].cpu().detach().numpy()
+                # s = sns.heatmap(transport_plot)
+                # s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
+                # plt.show()
 
 
                 cdist = cdist_local.cpu().detach().numpy()

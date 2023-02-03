@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import random
-
+from matplotlib.colors import LogNorm
 
 class WassOrderDistance(nn.Module):
     """
@@ -127,6 +127,7 @@ class WassOrderDistance(nn.Module):
         U = torch.multiply(k, d)
         dis = torch.sum(u * (torch.matmul(U, v)), dim=1, keepdim=True)
         t = torch.multiply(v.mT, torch.multiply(u, k))
+        # t = (t - t.mean(dim=1, keepdim=True) / torch.sqrt(t.var(dim=1, keepdim=True) + 0.0001))
 
         return dis, t
 
@@ -190,12 +191,12 @@ def test_2():
     x_2 = np.array(
         [[1, 2], [3, 4], [5, 6], [4, 3], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
-         [3, 4], [5, 6], [1, 2], [8,99]])
+         [3, 4], [5, 6], [1, 2], [8,90]])
 
     y_2 = np.array(
         [[1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4],
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
-         [3, 4], [5, 6], [1, 2], [4, 3], [8,99]])
+         [3, 4], [5, 6], [1, 2], [4, 3], [8,90]])
 
 
     x = np.stack([x_1, x_2])
