@@ -109,7 +109,7 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37)
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=10)
     trainer.fit(model, datamodule)
 
     return encoders, loggers_list, loggers_dict, experiment_id
@@ -152,7 +152,7 @@ def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, log
     )
 
     trainer = Trainer.from_argparse_args(args=args, logger=loggers_list, accelerator='gpu', devices=1, deterministic=True, max_epochs=num_epochs, default_root_dir='logs',
-        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=37)
+        val_check_interval = 0.0 if 'val' not in dataset_cfg['protocols'][args.protocol] else 1.0, callbacks=callbacks, enable_checkpointing=not args.no_ckpt, log_every_n_steps=10)
 
     trainer.fit(model, datamodule)
     trainer.test(model, datamodule, ckpt_path='best')

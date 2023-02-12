@@ -213,7 +213,6 @@ class CNNTransformer(LightningModule):
         dropout=0.1,
         num_head=2,
         num_attn_layers=2,
-        channels = 12,
         samples = 50,
 		**kwargs):
 
@@ -224,7 +223,7 @@ class CNNTransformer(LightningModule):
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=out_channels[-1], nhead=num_head)
         self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_attn_layers)
         self.out_size = self.conv_layers.out_size
-        self.out_sample = self.get_output_shape((2, channels, samples), True)
+        self.out_sample = self.get_output_shape((2, in_channels, samples), True)
 
     
     def forward(self, x):

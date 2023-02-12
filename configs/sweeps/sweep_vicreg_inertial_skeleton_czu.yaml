@@ -1,0 +1,46 @@
+program: ssl_training_mm.py
+method: grid
+project: sweep-mm_ssl-inertial-skeleton-czu
+entity: self-supervised-mmhar
+metric:
+  name: test_accuracy
+  goal: maximize
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--dataset"
+  - "czu_mhad"
+  - "--data_path"
+  - "/home/data/multimodal_har_datasets/czu_mhad"
+  - "--modalities"
+  - "inertial skeleton"
+  - "--models"
+  - "transformer cooccurrence"
+  - "--experiment_config_path"
+  - "configs/VICReg/vicreg_inertial_skeleton_czu.yaml"
+  - "--augmentations_path"
+  - "configs/inertial_augmentations/augmentations_czu.yaml  configs/skeleton_augmentations/augmentations_czu.yaml"
+  - "--online-eval"
+  - "--num-workers"
+  - "8"
+  - "--framework"
+  - "vicreg"
+#  - "--no_ckpt"
+  - "--sweep"
+parameters:
+  # General configs
+  num_epochs_ssl:
+    values: [100]
+
+  # SSL configs (will overwrite kwargs in ssl model definition)
+  ssl.batch_size:
+    values: [128]
+  ssl.sim_coeff:
+    values: [10, 20, 25]
+  ssl.std_coeff:
+    values: [10, 20, 25]
+  ssl.cov_coeff:
+    values: [1, 3, 5]
+  ssl.lr:
+    values: [0.0001, 0.001]

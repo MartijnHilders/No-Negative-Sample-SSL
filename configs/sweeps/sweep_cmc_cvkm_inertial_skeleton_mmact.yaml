@@ -1,0 +1,48 @@
+program: ssl_training_mm.py
+method: grid
+project: sweep-mm_ssl-inertial-skeleton-mmact
+entity: self-supervised-mmhar
+metric:
+  name: test_accuracy
+  goal: maximize
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--dataset"
+  - "mmact"
+  - "--modalities"
+  - "inertial skeleton"
+  - "--models"
+  - "transformer cooccurrence"
+  - "--experiment_config_path"
+  - "configs/multimodal_ssl/cmc_inertial_skeleton_mmact.yaml"
+  - "--pretrained_encoders_config_paths"
+  - "configs/inertial_ssl/inertial_ssl_mmact.yaml configs/skeleton_ssl/mmact_ssl.yaml"
+  - "--pretrained_encoder_paths"
+  - "../shared_models/ssl/inertial/mmact-transformer-2021-11-04_16_15_33_826667/last.ckpt ../shared_models/ssl/skeleton/simclr/mmact-cooccurrence-2021-11-07_17_17_41_506989/last.ckpt"
+  - "--augmentations_path"
+  - "configs/inertial_augmentations/augmentations_mmact.yaml configs/skeleton_augmentations/augmentations_mmact.yaml"
+  - "--online-eval"
+  - "--num-workers"
+  - "8"
+  - "--framework"
+  - "cmc-cvkm"
+  - "--no_ckpt"
+  - "--sweep"
+parameters:
+  # General configs
+  num_epochs_ssl:
+    values: [100]
+
+  # SSL configs (will overwrite kwargs in ssl model definition)
+  ssl.batch_size:
+    values: [32, 64, 128]
+  ssl.temperature:
+    values: [0.1, 0.25, 0.5]
+  ssl.cvkm_config.positive_mining_enabled:
+    values: [true, false]
+  ssl.cvkm_config.positive_mining_symmetric:
+    values: [true, false]
+  ssl.cvkm_config.positive_mining_k:
+    values: [1, 2, 3]

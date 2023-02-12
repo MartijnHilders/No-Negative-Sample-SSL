@@ -1,20 +1,12 @@
 experiment:
   seed: 28
-  num_epochs: 100
+  num_epochs_ssl: 300
+  num_epochs_fine_tuning: 100
+  batch_size_fine_tuning: 64
     
 modalities:
   inertial:
     model:
-      cnn1d:
-        class_name: SupervisedCNN1D
-        from_module: inertial
-        args: []
-        kwargs:
-          batch_size: 64
-          lr: 0.001
-          sample_length: 50
-          optimizer_name: "adam"
-          metric_name: "accuracy"
       transformer:
         class_name: SupervisedTransformer
         from_module: inertial
@@ -22,16 +14,22 @@ modalities:
         encoder_name: cnn_transformer
         args: []
         kwargs:
-          in_channels: 60
-          batch_size: 64
-          lr: 0.001
           sample_length: 50
           kernel_size: 5
           out_channels: [32, 64, 128]
           num_head: 2
           num_attn_layers: 2
+          lr: 0.001
           optimizer_name: "adam"
-          metric_name: "accuracy"
+      ssl:
+          args: []
+          kwargs:
+            lr: 0.001
+            sample_length: 50
+            hidden: [256, 128]
+            temperature: 0.2
+            batch_size: 256 #or 128?
+            optimizer_name_ssl: "adam"
     transforms:
       - class_name: InertialSampler
         from_module: inertial_transforms

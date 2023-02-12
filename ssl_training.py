@@ -6,6 +6,7 @@ from utils.experiment_utils import (generate_experiment_id,
                                     load_yaml_to_dict)
 from utils.training_utils import *
 from models.simclr_um import SimCLRUnimodal
+from models.barlow_um import UnimodalBarlow
 
 
 def parse_arguments():
@@ -90,6 +91,9 @@ def ssl_pre_training(args, modality, cfg, dataset_cfg, experiment_id, loggers_li
     encoder = init_ssl_encoder(model_cfg)
     if args.framework == 'simclr':
         model = SimCLRUnimodal(modality, encoder, encoder.out_size, **cfg['modalities'][modality]['model']['ssl']['kwargs'])
+    if args.framework == 'barlow':
+        model = UnimodalBarlow(modality, encoder, **cfg['modalities'][modality]['model']['ssl']['kwargs'])
+
 
     callbacks = setup_callbacks_ssl(
         no_ckpt               = args.no_ckpt,
