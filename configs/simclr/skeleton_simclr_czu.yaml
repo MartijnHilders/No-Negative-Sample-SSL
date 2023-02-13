@@ -1,59 +1,10 @@
-# These values will overwrite the ones in the individual model configuration files.
 experiment:
   seed: 28
-  num_epochs_ssl: 100
+  num_epochs_ssl: 300
   num_epochs_fine_tuning: 100
   batch_size_fine_tuning: 64
 
-ssl:
-  args: []
-  kwargs:
-    temperature: 0.1
-    sample_length: 50
-    batch_size: 128
-    hidden: [256, 128]
-    lr: 0.001
-    optimizer_name_ssl: "adam"
-
 modalities:
-  inertial:
-    model:
-      transformer:
-        class_name: SupervisedTransformer
-        from_module: inertial
-        encoder_class_name: CNNTransformer
-        encoder_name: cnn_transformer
-        args: []
-        kwargs:
-          sample_length: 50
-          kernel_size: 5
-          out_channels: [32, 64, 128]
-          num_head: 2
-          num_attn_layers: 2
-          lr: 0.001
-          optimizer_name: "adam"
-    transforms:
-      - class_name: InertialSampler
-        from_module: inertial_transforms
-        transform_name: sampling
-        in_test: true
-        kwargs:
-          size: 50
-      - class_name: ToTensor
-        from_module: general_transforms
-        transform_name: to_tensor
-        in_test: true
-      - class_name: Permute
-        from_module: general_transforms
-        transform_name: permutation
-        in_test: true
-        kwargs:
-          shape: [1, 0]
-      - class_name: ToFloat
-        transform_name: to_float
-        from_module: general_transforms
-        in_test: true
-
   skeleton:
     model:
       cooccurrence:
@@ -69,6 +20,16 @@ modalities:
           sample_length: 50
           lr: 0.001
           optimizer_name: adam
+      ssl:
+        args: []
+        kwargs:
+          batch_size: 32
+          sample_length: 50
+          optimizer_name_ssl: "adam"
+          lr: 0.001
+          # SimCLR specific
+          hidden:      [256, 128]
+          temperature: 0.5
     transforms:
       - class_name: RecenterJoints
         from_module: skeleton_transforms

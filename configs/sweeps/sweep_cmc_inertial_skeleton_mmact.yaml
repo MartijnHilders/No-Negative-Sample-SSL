@@ -1,5 +1,5 @@
 program: ssl_training_mm.py
-method: grid
+method: bayes
 project: sweep-mm_ssl-inertial-skeleton-mmact
 entity: self-supervised-mmhar
 metric:
@@ -9,27 +9,24 @@ command:
   - ${env}
   - ${interpreter}
   - ${program}
-  - "--experiment_config_path"
-  - "configs/cmc_cmkm/cmc_cmkm_mmact.yaml"
   - "--dataset"
   - "mmact"
   - "--data_path"
   - "/home/data/multimodal_har_datasets/mmact_new"
-  - "--models"
-  - "transformer cooccurrence"
-  - "--augmentations_path"
-  - "configs/inertial_augmentations/augmentations_mmact.yaml configs/skeleton_augmentations/augmentations_mmact.yaml"
-  - "--framework"
-  - "cmc-cmkm"
   - "--modalities"
   - "inertial skeleton"
-  - "--cmkm_pretrained_encoders_config_paths"
-  - "configs/simclr/inertial_simclr_mmact.yaml configs/simclr/skeleton_simclr_mmact.yaml"
-  - "--cmkm_pretrained_encoder_paths"
-  - "pretrained_encoders/inertial_simclr_mmact_xsubject.ckpt pretrained_encoders/skeleton_simclr_mmact_xsubject.ckpt"
+  - "--models"
+  - "transformer cooccurrence"
+  - "--experiment_config_path"
+  - "configs/cmc/cmc_inertial_skeleton_mmact.yaml"
+  - "--augmentations_path"
+  - "configs/inertial_augmentations/augmentations_mmact.yaml  configs/skeleton_augmentations/augmentations_mmact.yaml"
   - "--online-eval"
   - "--num-workers"
   - "8"
+  - "--framework"
+  - "cmc"
+#  - "--no_ckpt"
   - "--sweep"
 parameters:
   # General configs

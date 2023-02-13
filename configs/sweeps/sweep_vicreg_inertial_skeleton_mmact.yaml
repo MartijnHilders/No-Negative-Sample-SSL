@@ -35,12 +35,12 @@ parameters:
 
   # SSL configs (will overwrite kwargs in ssl model definition)
   ssl.batch_size:
-    values: [128, 256]
+    values: [128]
   ssl.sim_coeff:
-    values: [2, 5, 10, 20]
+    values: [10]
   ssl.std_coeff:
-    values: [20, 25, 30, 40]
+    values: [25]
   ssl.cov_coeff:
-    values: [1, 3, 5]
+    values: [1]
   ssl.lr:
-    values: [0.001, 0.0005]
+    values: [0.001]

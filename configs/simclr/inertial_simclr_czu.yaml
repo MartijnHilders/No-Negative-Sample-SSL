@@ -1,7 +1,7 @@
 experiment:
   seed: 28
-  num_epochs_ssl: 50
-  num_epochs_fine_tuning: 50
+  num_epochs_ssl: 300
+  num_epochs_fine_tuning: 100
   batch_size_fine_tuning: 64
 
 modalities:
