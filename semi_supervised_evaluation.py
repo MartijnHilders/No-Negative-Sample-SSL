@@ -124,7 +124,7 @@ def semi_supervised_training(args, cfg, dataset_cfg, k):
         else:
             # Supervised multimodal (from scratch).
             args.ssl_pretrained = False
-            args.no_ckpt = True
+            args.no_ckpt = False
             metrics = train_test_supervised_mm_model(args, cfg, dataset_cfg, freeze_encoders=True if args.mode == 'random' else False, limited_k=k)
     return metrics
 

@@ -134,7 +134,11 @@ def setup_classifier_metrics_logger(num_classes, metric_names=['accuracy', 'f1-s
     return LogClassifierMetrics(num_classes, metric_names, average=average)
 
 
-def setup_model_checkpoint_callback(metric, dataset, model, experiment_id, model_weights_path= './model_weights'):
+def setup_model_checkpoint_callback(metric, dataset, model, experiment_id, model_weights_path):
+
+    if model_weights_path is None:
+        model_weights_path = './model_weights'
+
     return ModelCheckpoint(
         monitor=metric, 
         dirpath=os.path.join(model_weights_path, f"{dataset}-{model}-{experiment_id}"),
@@ -145,6 +149,9 @@ def setup_model_checkpoint_callback(metric, dataset, model, experiment_id, model
 
 
 def setup_model_checkpoint_callback_last(model_weights_path, dataset, model, experiment_id):
+    if model_weights_path is None:
+        model_weights_path = './model_weights'
+
     return ModelCheckpoint(
         save_last=True,
         dirpath=os.path.join(model_weights_path, f"{dataset}-{model}-{experiment_id}"),
@@ -154,11 +161,11 @@ def setup_model_checkpoint_callback_last(model_weights_path, dataset, model, exp
 
 def setup_callbacks(early_stopping_metric, early_stopping_mode, class_names, num_classes, no_ckpt, model_weights_path, metric, dataset, model, experiment_id):
     callbacks = []
-    callbacks.append(setup_early_stopping_callback(early_stopping_metric, mode=early_stopping_mode))
-    callbacks.append(setup_confusion_matrix_logger(class_names))
-    callbacks.append(setup_classifier_metrics_logger(num_classes))
+    callbacks.append(setup_early_stopping_callback(metric = early_stopping_metric, mode=early_stopping_mode))
+    callbacks.append(setup_confusion_matrix_logger(class_names=class_names))
+    callbacks.append(setup_classifier_metrics_logger(num_classes=num_classes))
     if not no_ckpt:
-        callbacks.append(setup_model_checkpoint_callback(model_weights_path, metric, dataset, model, experiment_id))
+        callbacks.append(setup_model_checkpoint_callback(model_weights_path=model_weights_path, metric=metric, dataset=dataset, model=model, experiment_id=experiment_id))
 
     return callbacks
 
@@ -166,7 +173,7 @@ def setup_callbacks(early_stopping_metric, early_stopping_mode, class_names, num
 def setup_callbacks_ssl(no_ckpt, model_weights_path, dataset, model, experiment_id):
     callbacks = []
     if not no_ckpt:
-        callbacks.append(setup_model_checkpoint_callback_last(model_weights_path, dataset, model, experiment_id))
+        callbacks.append(setup_model_checkpoint_callback_last(model_weights_path=model_weights_path, dataset=dataset, model=model, experiment_id=experiment_id))
     return callbacks
 
 
