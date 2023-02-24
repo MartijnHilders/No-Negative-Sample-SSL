@@ -61,7 +61,8 @@ def get_cosine_sim_matrix(features):
 class SimCLRUnimodal(LightningModule):
     def __init__(self, modality, encoder, mlp_in_size, hidden=[256, 128], batch_size=64, temperature=0.1, n_views=2, optimizer_name_ssl='lars', lr=0.001, **kwargs) -> None:
         super().__init__()
-        self.save_hyperparameters('modality', 'hidden', 'batch_size', 'temperature', 'n_views', 'optimizer_name_ssl', 'lr')
+        self.save_hyperparameters('modality', 'hidden', 'batch_size', 'optimizer_name_ssl', 'lr')
+        # self.save_hyperparameters('modality', 'hidden', 'batch_size', 'temperature', 'n_views', 'optimizer_name_ssl', 'lr')
         self.encoder = encoder
         self.projection = ProjectionMLP(mlp_in_size, hidden)
         self.modality = modality

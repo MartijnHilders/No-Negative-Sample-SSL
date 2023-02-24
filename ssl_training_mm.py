@@ -1,11 +1,14 @@
 import argparse
 import random
 from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.utilities.seed import reset_seed
 from models.cmc import ContrastiveMultiviewCoding
 from models.cmc_cvkm import ContrastiveMultiviewCodingCVKM
 from models.multimodal import MultiModalClassifier
 from models.vicreg_mm import MultimodalVicReg
 from models.vicreg_mm_order import MultimodalVicRegOrder
+from models.barlow_mm import MultiModalBarlow
+from models.barlow_mm_order import MultiModalBarlowOrder
 from models.similarity_metrics.latent_space_similarity import LatentSpaceSimilarity
 
 from utils.experiment_utils import (dict_to_json, generate_experiment_id,
@@ -25,7 +28,7 @@ def parse_arguments():
     parser.add_argument('--dataset', required=True)
     parser.add_argument('--data_path', required=True)
     parser.add_argument('--protocol', default='cross_subject')
-    parser.add_argument('--framework', default='cmc', choices=["cmc", "cmc-cmkm", "vicreg", "vicreg-order"])
+    parser.add_argument('--framework', default='cmc', choices=["cmc", "cmc-cmkm", "vicreg", "vicreg-order", "barlow", "barlow-order"])
     parser.add_argument('--modalities', required=True, nargs='+')
     parser.add_argument('--models', required=True, nargs='+')
     parser.add_argument('--model_save_path', default='./model_weights')
@@ -76,9 +79,17 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
 
     # Initialize datamodule.
     batch_size = ssl_cfg['kwargs']['batch_size']
-    datamodule = init_datamodule(data_path=args.data_path, dataset_name=args.dataset, modalities=modalities, batch_size=batch_size,
-    split=dataset_cfg['protocols'][args.protocol], train_transforms=train_transforms, test_transforms=test_transforms,
-    ssl=True, n_views=1, num_workers=args.num_workers)
+
+    if args.framework == 'barlow' or args.framework == 'barlow-order':
+        datamodule = init_datamodule(data_path=args.data_path, dataset_name=args.dataset, modalities=modalities,                                   batch_size=batch_size,
+                                     split=dataset_cfg['protocols'][args.protocol], train_transforms=train_transforms,
+                                     test_transforms=test_transforms,
+                                     ssl=True, n_views=2, num_workers=args.num_workers)
+
+    else:
+        datamodule = init_datamodule(data_path=args.data_path, dataset_name=args.dataset, modalities=modalities, batch_size=batch_size,
+        split=dataset_cfg['protocols'][args.protocol], train_transforms=train_transforms, test_transforms=test_transforms,
+        ssl=True, n_views=1, num_workers=args.num_workers)
 
     # Merge general model params with dataset-specific model params.
     for m in modalities:
@@ -98,6 +109,10 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
         model = MultimodalVicReg(modalities, encoders, **ssl_cfg['kwargs'])
     elif args.framework == 'vicreg-order':
         model = MultimodalVicRegOrder(modalities, encoders, **ssl_cfg['kwargs'])
+    elif args.framework == 'barlow':
+        model = MultiModalBarlow(modalities, encoders, **ssl_cfg['kwargs'])
+    elif args.framework == 'barlow-order':
+        model = MultiModalBarlowOrder(modalities, encoders, **ssl_cfg['kwargs'])
 
     # Setup training callbacks.
     callbacks = setup_callbacks_ssl(
@@ -114,8 +129,13 @@ def ssl_pre_training(args, modalities, experiment_cfg, ssl_cfg, dataset_cfg, mod
 
     return encoders, loggers_list, loggers_dict, experiment_id
 
-def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, loggers_list, loggers_dict, experiment_id, limited_k=None):
-    seed_everything(experiment_cfg['seed']) # reset seed for consistency in results
+
+def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, loggers_list, loggers_dict, experiment_id, limited_k=None, random_seed=False):
+    if random_seed:
+        seed_everything(random.randint(0, 1000))
+    else:
+        seed_everything(experiment_cfg['seed']) # reset seed for consistency in results
+
     modalities = args.modalities
     batch_size = experiment_cfg['batch_size_fine_tuning']
     num_epochs = experiment_cfg['num_epochs_fine_tuning']
@@ -137,6 +157,8 @@ def fine_tuning(args, experiment_cfg, dataset_cfg, transform_cfgs, encoders, log
     datamodule = init_datamodule(data_path=args.data_path, dataset_name=args.dataset, modalities=modalities, batch_size=batch_size,
     split=dataset_cfg['protocols'][args.protocol], train_transforms=train_transforms, test_transforms=test_transforms,
     num_workers=args.num_workers, limited_k=limited_k)
+
+
 
     callbacks = setup_callbacks(
         early_stopping_metric = "val_loss",

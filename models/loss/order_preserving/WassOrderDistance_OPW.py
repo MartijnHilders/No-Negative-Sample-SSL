@@ -143,6 +143,7 @@ def test_1():
          [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2], [3, 4], [5, 6], [1, 2],
          [5, 6], [3, 4], [1, 2]])
 
+
     x = torch.from_numpy(x).float()
     y = torch.from_numpy(y).float()
     x.requires_grad = True

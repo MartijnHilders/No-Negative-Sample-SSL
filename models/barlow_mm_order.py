@@ -4,24 +4,22 @@ import torch
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
 from models.mlp import ProjectionMLP, LocalProjectionMLP_Volta
-from models.loss import VICRegLoss
+from models.loss import BarlowLoss
 from models.loss.order_preserving import WassOrderDistance_OPW, WassOrderDistance_OPW_batch, WassOrderDistance_Gromov, WassOrderDistance_Sinkhorn
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-class MultimodalVicRegOrder(LightningModule):
-    """
-    Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
-    """
-    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff= 10,
-                 beta_coeff=1, **kwargs):
+
+class MultiModalBarlowOrder(LightningModule):
+
+    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, optimizer_name_ssl='adam', lr=0.001,
+                 lambda_coeff = 5e-3, alpha_coeff = 1, beta_coeff = 1, **kwargs):
         super().__init__()
-        self.save_hyperparameters('modalities', 'hidden', 'batch_size', 'sim_coeff', 'std_coeff', 'cov_coeff', 'optimizer_name_ssl', 'lr')
+        self.save_hyperparameters('modalities', 'hidden', 'batch_size', 'optimizer_name_ssl', 'lr')
         
         self.modalities = modalities
         self.encoders = nn.ModuleDict(encoders)
 
-        # create local and global projections
         self.local_projections = {}
         self.global_projections = {}
 
@@ -30,6 +28,7 @@ class MultimodalVicRegOrder(LightningModule):
             # self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
             self.local_projections[m] = LocalProjectionMLP_Volta(in_size=local_projection_size, hidden=hidden)
             self.global_projections[m] = ProjectionMLP(in_size=encoders[m].out_size, hidden=hidden)
+
         self.local_projections = nn.ModuleDict(self.local_projections)
         self.global_projections = nn.ModuleDict(self.global_projections)
 
@@ -38,61 +37,72 @@ class MultimodalVicRegOrder(LightningModule):
 
         self.ssl_batch_size = batch_size
         self.embedding_size = hidden[-1]
-        self.sim_coeff = sim_coeff
-        self.std_coeff = std_coeff
-        self.cov_coeff = cov_coeff
+        self.lambda_coeff = lambda_coeff
         self.alpha_coeff = alpha_coeff
         self.beta_coeff = beta_coeff
 
+
     def _forward_one_modality(self, modality, inputs):
-        x = inputs[modality]
-        x = self.encoders[modality](x)
+        x1, x2 = inputs[modality]
 
-        # local feature projection
-        x_local = x.squeeze().permute(0, 2, 1)
-        x_local = self.local_projections[modality](x_local)
+        # x1
+        x1 = x1.float()
+        x_1 = self.encoders[modality](x1)
+        x_1_local = x_1.squeeze().permute(0, 2, 1)
+        x_1_local = self.local_projections[modality](x_1_local)
 
-        # global feature projection
-        x_global = nn.Flatten()(x)
-        x_global = self.global_projections[modality](x_global)
+        x_1_global = nn.Flatten()(x_1)
+        x_1_global = self.global_projections[modality](x_1_global)
 
-        return x_local, x_global
+        #x2
+        x2 = x2.float()
+        x_2 = self.encoders[modality](x2)
+        x_2_local = x_2.squeeze().permute(0, 2, 1)
+        x_2_local = self.local_projections[modality](x_2_local)
 
+        x_2_global = nn.Flatten()(x_2)
+        x_2_global = self.global_projections[modality](x_2_global)
+        return [x_1_local, x_2_local], [x_1_global, x_2_global]
 
     def forward(self, x):
         outs_local = {}
         outs_global = {}
         for m in self.modalities:
             outs_local[m], outs_global[m] = self._forward_one_modality(m, x)
-
         return outs_local, outs_global
 
     def _compute_loss(self, x, y, partition):
         x_local, y_local = x[0], y[0]
         x_global, y_global = x[1], y[1]
 
-        # initiate all the loss modules
-        vicreg_loss = VICRegLoss.VICRegLoss(ssl_batch_size=self.ssl_batch_size, embedding_size=self.embedding_size,
-                                     sim_coeff=self.sim_coeff, std_coeff=self.std_coeff, cov_coeff=self.cov_coeff)
+        b_loss = BarlowLoss.BarlowLoss(ssl_batch_size=self.ssl_batch_size, embedding_size=self.embedding_size,
+                                            lambda_coeff=self.lambda_coeff)
 
-        order_loss = WassOrderDistance_OPW_batch.WassOrderDistance()
+        o_loss = WassOrderDistance_OPW_batch.WassOrderDistance()
 
-        #calculate losses
-        repr_loss, std_loss, cov_loss, vic_loss = vicreg_loss(x_global, y_global)
-        order_loss, transport = order_loss(x_local, y_local)
+        # barlow twins losses
+        inter_loss_1 = b_loss(x_global[0], x_global[1])
+        inter_loss_2 = b_loss(y_global[0], y_global[1])
+        intra_loss_1 = b_loss(x_global[0], y_global[1])
+        intra_loss_2 = b_loss(x_global[1], y_global[0])
+        bt_loss = inter_loss_1 + inter_loss_2 + intra_loss_1 + intra_loss_2
+
+        # order loss
+        order_loss, transport = o_loss(x_local[0], y_local[1])
         order_loss = torch.mean(order_loss)
 
+        total_loss = self.alpha_coeff * bt_loss + self.beta_coeff * order_loss
 
-        #todo delete naïve method to save heatmaps locally. + find out how to only do it or certain epochs.
+        # plotting the heatmaps
         if random.random() < 0.005:
 
 
-            x_local_norm =  (x_local - x_local.mean(dim=1, keepdim=True)/torch.sqrt(x_local.var(dim=1, keepdim=True) + 0.0001))
-            y_local_norm = (y_local - y_local.mean(dim=1, keepdim=True)/torch.sqrt(y_local.var(dim=1, keepdim=True) + 0.0001))
+            x_local_norm =  (x_local[0] - x_local[0].mean(dim=1, keepdim=True)/torch.sqrt(x_local[0].var(dim=1, keepdim=True) + 0.0001))
+            y_local_norm = (y_local[1] - y_local[1].mean(dim=1, keepdim=True)/torch.sqrt(y_local[1].var(dim=1, keepdim=True) + 0.0001))
 
 
             for i in range(3):
-                idx = random.randint(0, x_local.shape[0]-1)
+                idx = random.randint(0, x_local[0].shape[0]-1)
                 # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
                 cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
                 transport_plot = transport[idx].cpu().detach().numpy()
@@ -106,21 +116,23 @@ class MultimodalVicRegOrder(LightningModule):
                 s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
                 plt.show()
 
-        loss = self.alpha_coeff * order_loss + self.beta_coeff * vic_loss
 
 
-        self.log(f"repr_{partition}_loss", repr_loss)
-        self.log(f"std_{partition}_loss", std_loss)
-        self.log(f"cov_{partition}_loss", cov_loss)
-        self.log(f"vic_{partition}_loss", self.beta_coeff * vic_loss)
-        self.log(f"order_{partition}_loss", self.alpha_coeff * order_loss)
-        self.log(f"ssl_{partition}_loss", loss)
+        self.log(f"bt_{partition}_loss",self.alpha_coeff * bt_loss)
+        self.log(f"order_{partition}_loss", self.beta_coeff * order_loss)
+        self.log(f"ssl_{partition}_loss", total_loss)
+        self.log(f"{self.modalities[0]}_loss", inter_loss_1)
+        self.log(f"{self.modalities[1]}_loss", inter_loss_2)
+        self.log(f"extra_1_loss", intra_loss_1)
+        self.log(f"extra_2_loss", intra_loss_2)
 
-        return loss
+        return total_loss
+
+
 
     def training_step(self, batch, batch_idx):
         for m in self.modalities:
-            batch[m] = batch[m].float()
+            batch[m] = batch[m]
         outs_local, outs_global = self(batch)
         x = [outs_local[self.modalities[0]], outs_global[self.modalities[0]]]
         y = [outs_local[self.modalities[1]], outs_global[self.modalities[1]]]
@@ -129,7 +141,7 @@ class MultimodalVicRegOrder(LightningModule):
 
     def validation_step(self, batch, batch_idx):
         for m in self.modalities:
-            batch[m] = batch[m].float()
+            batch[m] = batch[m]
         outs_local, outs_global = self(batch)
         x = [outs_local[self.modalities[0]], outs_global[self.modalities[0]]]
         y = [outs_local[self.modalities[1]], outs_global[self.modalities[1]]]
@@ -153,7 +165,7 @@ class MultimodalVicRegOrder(LightningModule):
     @staticmethod
     def get_local_projection_size(input):
         sample = input
-        out = torch.squeeze(sample).permute(0, 2, 1) # need to adjust for different encoder configurations
+        out = torch.squeeze(sample).permute(0, 2, 1)  # need to adjust for different encoder configurations
         return out.shape[-1]
 
     @staticmethod

@@ -7,6 +7,8 @@ import random
 from matplotlib.colors import LogNorm
 
 #todo reference
+# " code taken from VolTA implementation of GOT
+
 class WassOrderDistanceGromov(nn.Module):
 
     def __init__(self, lamda1=0.1, lamda2=0.01, delta=10, max_iter=200, verbose=0):
@@ -99,7 +101,7 @@ class WassOrderDistanceGromov(nn.Module):
         T, Cst = self.GW_torch_batch(Cs, Ct, bs, n, m, p, q, beta=lamda, iteration=iteration, OT_iteration=OT_iteration)
         temp = torch.bmm(torch.transpose(Cst, 1, 2), T)
         distance = self.batch_trace(temp, m, bs)
-        return distance, T
+        return distance
 
     def GW_torch_batch(self, Cs, Ct, bs, n, m, p, q, beta=0.5, iteration=5, OT_iteration=20):
         one_m = torch.ones(bs, m, 1).float().cuda()
@@ -122,6 +124,14 @@ class WassOrderDistanceGromov(nn.Module):
         Cgamma = Cst - 2 * torch.bmm(torch.bmm(Cs, gamma), torch.transpose(Ct, 1, 2))
         return gamma.detach(), Cgamma
 
+    def GW_distance_uniform(self, X, Y, lamda=1e-1, iteration=5, OT_iteration=20):
+        m = X.size(2)
+        n = Y.size(2)
+        bs = X.size(0)
+        p = (torch.ones(bs, m, 1) / m).cuda()
+        q = (torch.ones(bs, n, 1) / n).cuda()
+        return self.GW_distance(X, Y, p, q, lamda=lamda, iteration=iteration, OT_iteration=OT_iteration)
+
     def batch_trace(self, input_matrix, n, bs):
         a = torch.eye(n).cuda().unsqueeze(0).repeat(bs, 1, 1)
         b = a * input_matrix
@@ -130,6 +140,7 @@ class WassOrderDistanceGromov(nn.Module):
     # todo try to change so that it works with 3d -> batch, num_frames,
     # output -> batch size [batches, 2] where (2 = distance, transport plan)
     # save batch (keep this version and create new version [1,
+
     def forward(self, X, Y):
 
         # # Uniform implementation gromov
@@ -149,8 +160,9 @@ class WassOrderDistanceGromov(nn.Module):
         threshold = min_score + beta * (max_score - min_score)
         cos_dist = torch.nn.functional.relu(cos_distance - threshold)
 
-        dis = self.IPOT_distance_torch_batch_uniform(cos_dist, X.size(0), Y.size(1), Y.size(1), 30)
-        # T = self.IPOT_torch_batch_uniform(cos_dist, X.size(0), Y.size(1), Y.size(1))
+        wd = self.IPOT_distance_torch_batch_uniform(cos_dist, X.size(0), X.size(1), Y.size(1), 30)
+        gwd = self.GW_distance_uniform(X.transpose(2, 1), Y.transpose(2, 1))
+        dis = torch.mean(gwd) + torch.mean(wd)
         return dis
 
 
@@ -237,7 +249,7 @@ def test_2():
     #     create_trans_heatmap(t_scheme[i])
 
     # check if backprop works
-    distance[0].backward()
+    distance.backward()
     print(distance)
 
 

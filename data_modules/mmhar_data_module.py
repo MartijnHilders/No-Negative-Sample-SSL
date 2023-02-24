@@ -2,6 +2,7 @@ from abc import abstractmethod, ABCMeta
 from dataclasses import dataclass
 from typing import Any, List, Optional
 import numpy as np
+import pandas
 import pandas as pd
 from pytorch_lightning import LightningDataModule
 from torch.utils.data.dataloader import DataLoader
@@ -80,14 +81,17 @@ class MMHarDataset(Dataset, metaclass=ABCMeta):
                 df = df[df[key].isin(split[key])]
 
             df = df.sort_values(["modality", "label", "subject", "trial"], ascending=[True, True, True, True])
+
+            join_columns = ["label", "subject", "trial"]
+            if "scene" in list(selected_df.columns):
+                join_columns = ["label", "subject", "scene", "session"]  # workaround for MMAct
             if limited_k is not None:
                 if i == 0:
                     df = self._limit_df(df, limited_k)
-                    label_subject_trial = df[['label', 'subject', 'trial']]
+                    label_subject_trial = df[join_columns]
                 else:
-                    df = pd.merge(df, label_subject_trial, how='inner', on=['label', 'subject', 'trial'])
+                    df = pd.merge(df, label_subject_trial, how='inner', on=join_columns)
             self.data_tables[modality] = df
-
 
     @staticmethod
     def _limit_df(df, k):
@@ -99,7 +103,8 @@ class MMHarDataset(Dataset, metaclass=ABCMeta):
             if num_to_sample == 0:
                 num_to_sample = 1
             df_l = df_l.sample(num_to_sample)
-            limited_df = limited_df.append(df_l)
+
+            limited_df = pandas.concat([limited_df, df_l], axis=0, join='outer')
         return limited_df
 
     def __len__(self):

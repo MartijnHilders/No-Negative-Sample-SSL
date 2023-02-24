@@ -82,12 +82,12 @@ if __name__ == '__main__':
     train_transforms = {
         "inertial": transforms.Compose([ToTensor(), ToFloat(), Jittering(0.05), InertialSampler(150)]),
         "skeleton": SkeletonSampler(150),
-        "rgb": transforms.Compose([VideoSampler(40), VideoResize(False, 90, 70), ToTensor()])
+        # "rgb": transforms.Compose([VideoSampler(40), VideoResize(False, 90, 70), ToTensor()])
     }
 
     # try_num_workers()
 
-    data_module = MMActDataModule(batch_size=32, train_transforms=train_transforms, num_workers=6)
+    data_module = MMActDataModule(batch_size=32, train_transforms=train_transforms, num_workers=6, n_views=2)
     data_module.setup()
 
     dl = data_module.train_dataloader()
@@ -96,6 +96,6 @@ if __name__ == '__main__':
         print(b.keys())
         print(b['label'].shape)
         print(b['inertial'].shape)
-        print(b['rgb'].shape)
+        # print(b['rgb'].shape)
         print(b['skeleton'].shape)
         break

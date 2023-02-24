@@ -72,12 +72,14 @@ def init_ssl_pretrained(model_cfg, ckpt_path):
     class_ = SimCLRUnimodal('inertial', encoder, encoder.out_size)
     return class_.load_from_checkpoint(ckpt_path, encoder=encoder, mlp_in_size=encoder.out_size, strict=False)
 
-def init_ssl_mm_pretrained(modalities, model_cfgs, ckpt_path):
+def init_ssl_mm_pretrained(modalities, model_cfgs, ckpt_path, framework='cmc'):
     encoders = {}
     for m in modalities:
         encoders[m] = init_ssl_encoder(model_cfgs[m])
-    class_ = ContrastiveMultiviewCoding(modalities, encoders)
+    if framework == 'cmc':
+        class_ = ContrastiveMultiviewCoding(modalities, encoders)
     return class_.load_from_checkpoint(ckpt_path, modalities=modalities, encoders=encoders, strict=False)
+
 
 def init_ssl_encoder(model_cfg, ckpt_path=None):
     module = importlib.import_module(f"models.{model_cfg['from_module']}")
@@ -132,7 +134,7 @@ def setup_classifier_metrics_logger(num_classes, metric_names=['accuracy', 'f1-s
     return LogClassifierMetrics(num_classes, metric_names, average=average)
 
 
-def setup_model_checkpoint_callback(model_weights_path, metric, dataset, model, experiment_id):
+def setup_model_checkpoint_callback(metric, dataset, model, experiment_id, model_weights_path= './model_weights'):
     return ModelCheckpoint(
         monitor=metric, 
         dirpath=os.path.join(model_weights_path, f"{dataset}-{model}-{experiment_id}"),
