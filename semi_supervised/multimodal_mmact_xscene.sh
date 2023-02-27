@@ -40,7 +40,7 @@ python -m semi_supervised_evaluation \
 
 # VICReg preserved.
 python -m semi_supervised_evaluation \
-    --experiment_config_path configs/VICReg/inertial_skeleton_preserved_mmact.yaml \
+    --experiment_config_path configs/VICReg/vicreg_inertial_skeleton_preserved_mmact.yaml \
     --dataset mmact \
     --data_path /home/data/multimodal_har_datasets/mmact_new \
     --modalities inertial skeleton \
@@ -50,7 +50,6 @@ python -m semi_supervised_evaluation \
     --pre_trained_paths   /home/I6169337/cmc/model_weights/mmact-mm_ssl_vicreg_transformer_cooccurrence-2023-02-24_15_49_05_291090/last.ckpt \
     --protocol cross_scene \
     --res_json_path  /home/I6169337/semi_supervised_results/mmact-xscene/mm_mmact-xscene_vicreg.json \
-
 
 
 

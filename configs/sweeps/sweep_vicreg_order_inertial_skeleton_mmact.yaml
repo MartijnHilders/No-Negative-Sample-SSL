@@ -1,0 +1,38 @@
+program: ssl_training_mm.py
+method: grid
+project: sweep-mm_ssl-inertial-skeleton-mmact
+entity: self-supervised-mmhar
+metric:
+  name: test_f1-score
+  goal: maximize
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - "--dataset"
+  - "mmact"
+  - "--data_path"
+  - "/home/data/multimodal_har_datasets/mmact_new"
+  - "--modalities"
+  - "inertial skeleton"
+  - "--models"
+  - "transformer cooccurrence"
+  - "--experiment_config_path"
+  - "configs/VICReg_order/vicreg_order_mmact.yaml"
+  - "--augmentations_path"
+  - "configs/inertial_augmentations/augmentations_mmact.yaml  configs/skeleton_augmentations/augmentations_mmact.yaml"
+  - "--online-eval"
+  - "--num-workers"
+  - "8"
+  - "--framework"
+  - "vicreg-order"
+#  - "--no_ckpt"
+  - "--sweep"
+parameters:
+  # General configs
+  num_epochs_ssl:
+    values: [100]
+
+  # SSL configs (will overwrite kwargs in ssl model definition)
+  ssl.alpha_coeff:
+    values: [0, 4, 10, 25]

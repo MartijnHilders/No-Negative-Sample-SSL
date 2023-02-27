@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import torch
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
-from models.mlp import ProjectionMLP, LocalProjectionMLP_Volta
+from models.mlp import ProjectionMLP, LocalProjectionMLP
 from models.loss import BarlowLoss
 from models.loss.order_preserving import WassOrderDistance_OPW, WassOrderDistance_OPW_batch, WassOrderDistance_Gromov, WassOrderDistance_Sinkhorn
 import seaborn as sns
@@ -25,8 +25,7 @@ class MultiModalBarlowOrder(LightningModule):
 
         for m in modalities:
             local_projection_size = self.get_local_projection_size(encoders[m].out_sample)
-            # self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
-            self.local_projections[m] = LocalProjectionMLP_Volta(in_size=local_projection_size, hidden=hidden)
+            self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
             self.global_projections[m] = ProjectionMLP(in_size=encoders[m].out_size, hidden=hidden)
 
         self.local_projections = nn.ModuleDict(self.local_projections)
@@ -94,27 +93,28 @@ class MultiModalBarlowOrder(LightningModule):
         total_loss = self.alpha_coeff * bt_loss + self.beta_coeff * order_loss
 
         # plotting the heatmaps
-        if random.random() < 0.005:
-
-
-            x_local_norm =  (x_local[0] - x_local[0].mean(dim=1, keepdim=True)/torch.sqrt(x_local[0].var(dim=1, keepdim=True) + 0.0001))
-            y_local_norm = (y_local[1] - y_local[1].mean(dim=1, keepdim=True)/torch.sqrt(y_local[1].var(dim=1, keepdim=True) + 0.0001))
-
-
-            for i in range(3):
-                idx = random.randint(0, x_local[0].shape[0]-1)
-                # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
-                cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
-                transport_plot = transport[idx].cpu().detach().numpy()
-                s = sns.heatmap(transport_plot)
-                s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
-                plt.show()
-
-
-                cdist = cdist_local.cpu().detach().numpy()
-                s2 = sns.heatmap(cdist)
-                s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
-                plt.show()
+        # todo delete
+        # if random.random() < 0.005:
+        #
+        #
+        #     x_local_norm =  (x_local[0] - x_local[0].mean(dim=1, keepdim=True)/torch.sqrt(x_local[0].var(dim=1, keepdim=True) + 0.0001))
+        #     y_local_norm = (y_local[1] - y_local[1].mean(dim=1, keepdim=True)/torch.sqrt(y_local[1].var(dim=1, keepdim=True) + 0.0001))
+        #
+        #
+        #     for i in range(3):
+        #         idx = random.randint(0, x_local[0].shape[0]-1)
+        #         # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
+        #         cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
+        #         transport_plot = transport[idx].cpu().detach().numpy()
+        #         s = sns.heatmap(transport_plot)
+        #         s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
+        #         plt.show()
+        #
+        #
+        #         cdist = cdist_local.cpu().detach().numpy()
+        #         s2 = sns.heatmap(cdist)
+        #         s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
+        #         plt.show()
 
 
 

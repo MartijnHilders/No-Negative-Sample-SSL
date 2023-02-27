@@ -137,7 +137,7 @@ if __name__ == '__main__':
     DATA_PATH = '/home/data/multimodal_har_datasets/czu_mhad'
     # DATA_PATH =  os.path.join(os.path.dirname(os.path.abspath(os.curdir)),'multimodal_har_datasets\czu_mhad')
 
-    instance_path_skeleton = f'{DATA_PATH}/Skeleton/x1_a1_t1.mat'
+    instance_path_skeleton = f'{DATA_PATH}/Skeleton/x1_a7_t1.mat'
     skeleton_instance = CZUSkeletonInstance(instance_path_skeleton)
     # print(skeleton_instance.joints[0])
     print(f' Skeleton shape {np.array(skeleton_instance.joints).shape}')
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # print(depth_instance.image[0])
     print(f' Depth image shape {np.array(depth_instance.image).shape}')
 
-    instance_path_inertial = f'{DATA_PATH}/Inertial/x1_a1_t1.mat'
+    instance_path_inertial = f'{DATA_PATH}/Inertial/x2_a8_t1.mat'
     inertial_instance = CZUInertialInstance(instance_path_inertial)
     # print(inertial_instance.signal[0])
     print(f' Inertial shape {np.array(inertial_instance.signal).shape}')

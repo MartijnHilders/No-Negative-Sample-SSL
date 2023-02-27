@@ -3,7 +3,7 @@ import torch.nn.functional as F
 import torch
 from pytorch_lightning.core.module import LightningModule
 from torch import nn
-from models.mlp import ProjectionMLP, LocalProjectionMLP_Volta
+from models.mlp import ProjectionMLP, LocalProjectionMLP
 from models.loss import VICRegLoss
 from models.loss.order_preserving import WassOrderDistance_OPW, WassOrderDistance_OPW_batch, WassOrderDistance_Gromov, WassOrderDistance_Sinkhorn
 import seaborn as sns
@@ -13,7 +13,7 @@ class MultimodalVicRegOrder(LightningModule):
     """
     Implementation of VicReg for two modalities (adapted from https://github.com/facebookresearch/vicreg/)
     """
-    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff= 10,
+    def __init__(self, modalities, encoders, hidden=[256, 128], batch_size=64, sim_coeff=10, std_coeff=10, cov_coeff=5, optimizer_name_ssl='adam', lr=0.001, alpha_coeff= 1,
                  beta_coeff=1, **kwargs):
         super().__init__()
         self.save_hyperparameters('modalities', 'hidden', 'batch_size', 'sim_coeff', 'std_coeff', 'cov_coeff', 'optimizer_name_ssl', 'lr')
@@ -27,8 +27,7 @@ class MultimodalVicRegOrder(LightningModule):
 
         for m in modalities:
             local_projection_size = self.get_local_projection_size(encoders[m].out_sample)
-            # self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
-            self.local_projections[m] = LocalProjectionMLP_Volta(in_size=local_projection_size, hidden=hidden)
+            self.local_projections[m] = LocalProjectionMLP(in_size=local_projection_size, hidden=hidden)
             self.global_projections[m] = ProjectionMLP(in_size=encoders[m].out_size, hidden=hidden)
         self.local_projections = nn.ModuleDict(self.local_projections)
         self.global_projections = nn.ModuleDict(self.global_projections)
@@ -84,36 +83,36 @@ class MultimodalVicRegOrder(LightningModule):
 
 
         #todo delete naïve method to save heatmaps locally. + find out how to only do it or certain epochs.
-        if random.random() < 0.005:
+        # if random.random() < 0.005:
+        #
+        #
+        #     x_local_norm =  (x_local - x_local.mean(dim=1, keepdim=True)/torch.sqrt(x_local.var(dim=1, keepdim=True) + 0.0001))
+        #     y_local_norm = (y_local - y_local.mean(dim=1, keepdim=True)/torch.sqrt(y_local.var(dim=1, keepdim=True) + 0.0001))
+        #
+        #
+        #     for i in range(3):
+        #         idx = random.randint(0, x_local.shape[0]-1)
+        #         # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
+        #         cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
+        #         transport_plot = transport[idx].cpu().detach().numpy()
+        #         s = sns.heatmap(transport_plot)
+        #         s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
+        #         plt.show()
+        #
+        #
+        #         cdist = cdist_local.cpu().detach().numpy()
+        #         s2 = sns.heatmap(cdist)
+        #         s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
+        #         plt.show()
 
-
-            x_local_norm =  (x_local - x_local.mean(dim=1, keepdim=True)/torch.sqrt(x_local.var(dim=1, keepdim=True) + 0.0001))
-            y_local_norm = (y_local - y_local.mean(dim=1, keepdim=True)/torch.sqrt(y_local.var(dim=1, keepdim=True) + 0.0001))
-
-
-            for i in range(3):
-                idx = random.randint(0, x_local.shape[0]-1)
-                # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
-                cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
-                transport_plot = transport[idx].cpu().detach().numpy()
-                s = sns.heatmap(transport_plot)
-                s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
-                plt.show()
-
-
-                cdist = cdist_local.cpu().detach().numpy()
-                s2 = sns.heatmap(cdist)
-                s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
-                plt.show()
-
-        loss = self.alpha_coeff * order_loss + self.beta_coeff * vic_loss
+        loss =  self.alpha_coeff * vic_loss + self.beta_coeff * order_loss
 
 
         self.log(f"repr_{partition}_loss", repr_loss)
         self.log(f"std_{partition}_loss", std_loss)
         self.log(f"cov_{partition}_loss", cov_loss)
-        self.log(f"vic_{partition}_loss", self.beta_coeff * vic_loss)
-        self.log(f"order_{partition}_loss", self.alpha_coeff * order_loss)
+        self.log(f"vic_{partition}_loss", self.alpha_coeff * vic_loss)
+        self.log(f"order_{partition}_loss", self.beta_coeff * order_loss)
         self.log(f"ssl_{partition}_loss", loss)
 
         return loss

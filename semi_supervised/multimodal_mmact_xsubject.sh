@@ -37,7 +37,7 @@ python -m semi_supervised_evaluation \
 
 # VICReg preserved.
 python -m semi_supervised_evaluation \
-    --experiment_config_path configs/VICReg/inertial_skeleton_preserved_mmact.yaml \
+    --experiment_config_path configs/VICReg/vicreg_inertial_skeleton_preserved_mmact.yaml \
     --dataset mmact \
     --data_path /home/data/multimodal_har_datasets/mmact_new \
     --modalities inertial skeleton \

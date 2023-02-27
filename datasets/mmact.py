@@ -120,11 +120,17 @@ class MMActSkeletonInstance(MMActInstance):
 
 if __name__ == '__main__':
     DATA_PATH = '/home/data/multimodal_har_datasets/mmact_new'
-    inertial_instance_path = f'{DATA_PATH}/Inertial/a1_s1_t1_ses1_sc1.csv'
-    skeleton_instance_path = f'{DATA_PATH}/Skeleton/a1_s16_t10_ses5_sc2.npy'
-    rgb_instance_path = f'{DATA_PATH}/RGB/a10_s10_t10_ses1_sc4.mp4'
+    inertial_instance_path = f'{DATA_PATH}/Inertial/a6_s1_t1_ses1_sc1.csv'
+    skeleton_instance_path = f'{DATA_PATH}/Skeleton/a6_s16_t10_ses5_sc2.npy'
+    rgb_instance_path = f'{DATA_PATH}/RGB/a6_s10_t10_ses1_sc4.mp4'
+
 
     dataset_manager = MMActDatasetManager(DATA_PATH)
     inertial_instance = MMActInertialInstance(inertial_instance_path)
     skeleton_instance = MMActSkeletonInstance(skeleton_instance_path)
     rgb_instance = MMActRGBInstance(rgb_instance_path)
+
+    print(np.array(skeleton_instance.joints).shape)
+    print(np.array(inertial_instance.signal).shape)
+    print(np.array(rgb_instance.video).shape)
+
