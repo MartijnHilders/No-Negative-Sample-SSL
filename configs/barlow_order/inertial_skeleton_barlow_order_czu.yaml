@@ -9,7 +9,7 @@ ssl:
   args: []
   kwargs:
     alpha_coeff: 1
-    beta_coeff: 100
+    beta_coeff: 50
     lambda_coeff: 5.0e-3
     sample_length: 50
     batch_size: 128

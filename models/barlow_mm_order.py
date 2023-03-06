@@ -94,27 +94,27 @@ class MultiModalBarlowOrder(LightningModule):
 
         # plotting the heatmaps
         # todo delete
-        # if random.random() < 0.005:
-        #
-        #
-        #     x_local_norm =  (x_local[0] - x_local[0].mean(dim=1, keepdim=True)/torch.sqrt(x_local[0].var(dim=1, keepdim=True) + 0.0001))
-        #     y_local_norm = (y_local[1] - y_local[1].mean(dim=1, keepdim=True)/torch.sqrt(y_local[1].var(dim=1, keepdim=True) + 0.0001))
-        #
-        #
-        #     for i in range(3):
-        #         idx = random.randint(0, x_local[0].shape[0]-1)
-        #         # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
-        #         cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
-        #         transport_plot = transport[idx].cpu().detach().numpy()
-        #         s = sns.heatmap(transport_plot)
-        #         s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
-        #         plt.show()
-        #
-        #
-        #         cdist = cdist_local.cpu().detach().numpy()
-        #         s2 = sns.heatmap(cdist)
-        #         s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
-        #         plt.show()
+        if random.random() < 0.005:
+
+
+            x_local_norm =  (x_local[0] - x_local[0].mean(dim=1, keepdim=True)/torch.sqrt(x_local[0].var(dim=1, keepdim=True) + 0.0001))
+            y_local_norm = (y_local[1] - y_local[1].mean(dim=1, keepdim=True)/torch.sqrt(y_local[1].var(dim=1, keepdim=True) + 0.0001))
+
+
+            for i in range(3):
+                idx = random.randint(0, x_local[0].shape[0]-1)
+                # cdist_local = self.get_cosine_sim_matrix(x_local_norm[idx], y_local_norm[idx])
+                cdist_local = torch.cdist(x_local_norm[idx], y_local_norm[idx])
+                transport_plot = transport[idx].cpu().detach().numpy()
+                s = sns.heatmap(transport_plot)
+                s.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Transport Plan')
+                plt.show()
+
+
+                cdist = cdist_local.cpu().detach().numpy()
+                s2 = sns.heatmap(cdist)
+                s2.set(ylabel="Inertial Features", xlabel="Skeleton Features", title='Cdist Heatmap')
+                plt.show()
 
 
 

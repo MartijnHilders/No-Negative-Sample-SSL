@@ -11,7 +11,7 @@ ssl:
     sim_coeff: 10
     std_coeff: 25
     cov_coeff: 1
-    beta_coeff: 100
+    beta_coeff: 50
     sample_length: 50
     batch_size: 128
     hidden: [256, 128]
